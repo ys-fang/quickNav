@@ -12,7 +12,7 @@ const QuickNav = (function() {
       { id: 'vocabnote', name: '字彙筆記', icon: 'fa-book-open', path: '../vocabNote/' },
       { id: 'vocabprint', name: '字彙列印', icon: 'fa-print', path: './vocabPrint/' },
       { id: 'vocabloop', name: '字彙迴憶', icon: 'fa-infinity', path: '../vocabLoop/' },
-      { id: 'vocabspeak', name: '字彙口說', icon: 'fa-microphone', path: '../vocabSpeak/' }
+      //{ id: 'vocabspeak', name: '字彙口說', icon: 'fa-microphone', path: '../vocabSpeak/' }
     ],
     title: '跳轉捷徑',
     triggerIcon: 'fa-compass',
