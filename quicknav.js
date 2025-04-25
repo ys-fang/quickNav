@@ -83,21 +83,21 @@ const QuickNav = (function() {
     switch(config.position) {
       case 'top-left':
         elements.trigger.style.top = '20px';
-        elements.trigger.style.left = '20px';
+        elements.trigger.style.left = '-5px';
         break;
       case 'top-right':
         elements.trigger.style.top = '20px';
-        elements.trigger.style.right = '20px';
+        elements.trigger.style.right = '-5px';
         elements.trigger.style.left = 'auto';
         break;
       case 'bottom-left':
         elements.trigger.style.bottom = '20px';
-        elements.trigger.style.left = '20px';
+        elements.trigger.style.left = '-5px';
         elements.trigger.style.top = 'auto';
         break;
       case 'bottom-right':
         elements.trigger.style.bottom = '20px';
-        elements.trigger.style.right = '20px';
+        elements.trigger.style.right = '-5px';
         elements.trigger.style.top = 'auto';
         elements.trigger.style.left = 'auto';
         break;
