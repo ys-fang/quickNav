@@ -71,9 +71,12 @@ class VocabExportAppElement extends HTMLElement {
       const shadow = this.shadowRoot;
       shadow.innerHTML += `
         <style>
-          /* Styles copied from VocabExport.html */
-          :root {
-            /* Define CSS variables scoped to the shadow DOM */
+          /* Import Google Fonts directly inside Shadow DOM */
+          @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+          /* Define CSS variables and base styles on the host element */
+          :host {
+            /* Define CSS variables scoped to the component */
             --primary-color: #6366f1;
             --primary-dark: #4f46e5;
             --primary-light: #818cf8;
@@ -110,29 +113,28 @@ class VocabExportAppElement extends HTMLElement {
             --transition-fast: all 0.2s ease-in-out;
             --transition: all 0.3s ease;
             --sidebar-width: 260px;
-          }
-  
-          /* Reset/Base styles scoped to :host */
-          :host {
-            display: block; /* Ensure the host element takes up space */
-            font-family: 'Noto Sans TC', sans-serif; /* Apply default font */
-            background-color: var(--bg-primary); /* Apply body background */
+
+            /* Base styles for the component itself */
+            display: block;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-primary);
             min-height: 100vh;
             line-height: 1.6;
-          }
-  
-          *, *::before, *::after {
-            box-sizing: border-box;
-          }
-  
-          /* Styles originally applied to html/body */
-          /* Using :host selector for web component root */
-          :host {
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             color: var(--text-primary);
           }
-  
+
+          /* Styles originally in :root removed as they are now in :host */
+          /* :root { ... } */
+
+          /* Reset/Base styles scoped */
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+
+          /* Styles originally applied to html/body are now applied via :host */
+
           /* Main layout within the Shadow DOM */
           .vocab-export-wrapper {
               display: flex;
