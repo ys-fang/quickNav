@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vacabNote｜字彙筆記｜均一教育平台</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://ys-fang.github.io/quickNav/quicknav.css">
+  <style>
+    /* 全域重置與基準設置 */
+    html {
+      font-size: 16px;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+    }
+
+    /* 全局 CSS 變數定義 */
+    :root {
+      /* 顏色變量 */
+      --jv-primary-color: #6366f1;
+      --jv-primary-dark: #4f46e5;
+      --jv-text-light: #fff;
+      --jv-bg-primary: #f8fafc;
+      --jv-bg-card: #ffffff;
+      --jv-text-secondary: #64748b;
+      
+      /* 間距與陰影 */
+      --jv-shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+      --jv-border-radius-lg: 8px;
+      --jv-border-radius-xl: 20px;
+      
+      /* 字體大小基準 */
+      --jv-font-size-base: 1rem;
+      --jv-font-size-sm: 0.875rem;
+      --jv-font-size-lg: 1.125rem;
+      --jv-font-size-xl: 1.25rem;
+      --jv-font-size-2xl: 1.5rem;
+      --jv-font-size-3xl: 1.875rem;
+    }
+
+    /* 命名空間前綴 */
+    .jv-container {
+      /* 基礎樣式設定 */
+      font-family: 'Noto Sans TC', sans-serif;
+      min-height: 100vh;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* 基礎樣式重置 */
+    .jv-container * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-size: var(--jv-font-size-base);
+      line-height: 1.5;
+    }
+
+    /* 標題樣式 */
+    .jv-container .jv-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .jv-container .jv-header h1 {
+      font-size: var(--jv-font-size-3xl);
+      color: var(--jv-primary-color);
+      margin-bottom: 1rem;
+    }
+    
+    .jv-container .jv-header h1 i {
+      font-size: 1em;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
+    /* 載入中樣式 */
+    .jv-container #jv-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .jv-container .jv-loading-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      color: var(--jv-text-light);
+      font-size: var(--jv-font-size-xl);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    /* 單字列表樣式 */
+    .jv-container .jv-word-list {
+      margin-top: 2rem;
+    }
+
+    .jv-container .jv-words-container {
+      background-color: white;
+      border-radius: var(--jv-border-radius-lg);
+      padding: 1rem;
+      box-shadow: var(--jv-shadow-sm);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .jv-container .jv-word-item {
+      padding: 0.8rem 1.2rem;
+      border-radius: 8px;
+      background-color: rgba(99, 102, 241, 0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      transition: transform 0.2s ease;
+      flex: 0 1 auto;
+    }
+
+    .jv-container .jv-word-item:hover {
+      transform: scale(1.05);
+    }
+
+    .jv-container .jv-word-en {
+      font-weight: bold;
+      font-size: var(--jv-font-size-lg);
+      color: var(--jv-primary-dark);
+      display: block;
+    }
+
+    .jv-container .jv-word-cn {
+      color: var(--jv-text-secondary);
+      font-size: var(--jv-font-size-sm);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* 主題選擇器樣式 */
+    .jv-container .jv-theme-selector {
+      overflow-x: auto;
+      padding: 1rem 0;
+      margin-bottom: 1rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      display: flex;
+      flex-direction: row;
+      justify-content: left;
+    }
+
+    .jv-container .jv-theme-selector::-webkit-scrollbar {
+      display: none;
+    }
+
+    .jv-container .jv-theme-option {
+      flex: 0 0 auto;
+      padding: 0.5rem 1rem;
+      margin-right: 0.5rem;
+      border-radius: 20px;
+      font-size: var(--jv-font-size-sm);
+      background-color: transparent;
+      color: var(--jv-primary-color);
+      border: 1px solid var(--jv-primary-color);
+      white-space: nowrap;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .jv-container .jv-theme-option.selected {
+      background: var(--jv-primary-dark);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    }
+    
+    .jv-container .jv-theme-option:not(.selected):hover {
+      background-color: rgba(99, 102, 241, 0.1);
+    }
+
+    /* 搜索功能樣式 */
+    .jv-container .jv-search-container {
+      margin-bottom: 0.5rem;
+      position: relative;
+      width: 100%;
+    }
+    
+    .jv-container .jv-search-box {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      border-radius: var(--jv-border-radius-lg);
+      padding: 0.6rem 1rem;
+      box-shadow: var(--jv-shadow-sm);
+      margin-bottom: 0.5rem;
+    }
+    
+    .jv-container .jv-search-box i.fa-search {
+      color: var(--jv-text-secondary);
+      font-size: 0.9rem;
+      margin-right: 0.75rem;
+    }
+    
+    .jv-container .jv-search-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: var(--jv-font-size-base);
+      background: transparent;
+      color: var(--jv-text-secondary);
+    }
+    
+    .jv-container .jv-search-box input::placeholder {
+      color: #cbd5e1;
+    }
+    
+    .jv-container .jv-clear-search {
+      color: #cbd5e1;
+      cursor: pointer;
+      font-size: 0.8rem;
+      opacity: 0;
+      transition: all 0.2s ease;
+    }
+    
+    .jv-container .jv-clear-search.visible {
+      opacity: 1;
+    }
+    
+    .jv-container .jv-clear-search:hover {
+      color: var(--jv-text-secondary);
+    }
+    
+    .jv-container .jv-search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      background-color: white;
+      border-radius: var(--jv-border-radius-lg);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-height: 0;
+      overflow-y: auto;
+      z-index: 100;
+      transition: max-height 0.3s ease;
+      opacity: 0;
+      visibility: hidden;
+    }
+    
+    .jv-container .jv-search-results.active {
+      max-height: 300px;
+      padding: 0.5rem 0;
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .jv-container .jv-search-result-item {
+      padding: 0.8rem 1rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.15s ease;
+    }
+    
+    .jv-container .jv-search-result-item:hover {
+      background-color: rgba(99, 102, 241, 0.05);
+    }
+    
+    .jv-container .jv-search-result-item.selected {
+      background-color: rgba(99, 102, 241, 0.1);
+      border-left: 3px solid var(--jv-primary-color);
+    }
+    
+    .theme-nature .jv-search-result-item.selected {
+      background-color: rgba(42, 187, 155, 0.1);
+      border-left: 3px solid #2abb9b;
+    }
+    
+    .theme-ocean .jv-search-result-item.selected {
+      background-color: rgba(52, 152, 219, 0.1);
+      border-left: 3px solid #3498db;
+    }
+    
+    .theme-candy .jv-search-result-item.selected {
+      background-color: rgba(231, 76, 60, 0.1);
+      border-left: 3px solid #e74c3c;
+    }
+    
+    .theme-classic .jv-search-result-item.selected {
+      background-color: rgba(15, 23, 42, 0.1);
+      border-left: 3px solid #0f172a;
+    }
+    
+    .jv-container .jv-search-result-word {
+      font-weight: 600;
+      color: var(--jv-primary-dark);
+    }
+    
+    .jv-container .jv-search-result-translation {
+      font-size: var(--jv-font-size-sm);
+      color: var(--jv-text-secondary);
+    }
+    
+    .jv-container .jv-search-highlight {
+      background-color: rgba(99, 102, 241, 0.2);
+      border-radius: 2px;
+      padding: 0 2px;
+    }
+    
+    .jv-container .jv-no-results {
+      padding: 1rem;
+      text-align: center;
+      color: var(--jv-text-secondary);
+      font-style: italic;
+    }
+    
+    /* 主題相容 */
+    .theme-nature .jv-search-highlight {
+      background-color: rgba(42, 187, 155, 0.2);
+    }
+    
+    .theme-ocean .jv-search-highlight {
+      background-color: rgba(52, 152, 219, 0.2);
+    }
+    
+    .theme-candy .jv-search-highlight {
+      background-color: rgba(231, 76, 60, 0.2);
+    }
+    
+    .theme-classic .jv-search-highlight {
+      background-color: rgba(15, 23, 42, 0.15);
+    }
+
+    /* 主題樣式 */
+    .jv-container .theme-nature .jv-word-item {
+      background-color: rgba(42, 187, 155, 0.1);
+    }
+    .jv-container .theme-nature .jv-word-en {
+      color: #2abb9b;
+    }
+
+    .jv-container .theme-ocean .jv-word-item {
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+    .jv-container .theme-ocean .jv-word-en {
+      color: #3498db;
+    }
+
+    .jv-container .theme-candy .jv-word-item {
+      background-color: rgba(231, 76, 60, 0.1);
+    }
+    .jv-container .theme-candy .jv-word-en {
+      color: #e74c3c;
+    }
+
+    .jv-container .theme-classic .jv-word-item {
+      background-color: rgba(15, 23, 42, 0.1);
+    }
+    .jv-container .theme-classic .jv-word-en {
+      color: #0f172a;
+    }
+
+    /* 響應式設計 */
+    @media screen and (max-width: 768px) {
+      html {
+        font-size: 14px;
+      }
+
+      .jv-container {
+        padding: 1rem;
+      }
+
+      .jv-container .jv-header h1 {
+        font-size: var(--jv-font-size-2xl);
+      }
+    }
+
+    /* Modal 樣式 */
+    .jv-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .jv-modal-content {
+      background-color: #f8f5e6;
+      border-radius: var(--jv-border-radius-xl);
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+      padding: 2rem;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* 進度指示器樣式 */
+    .jv-progress-container {
+      position: absolute;
+      top: 0.75rem;
+      left: 0;
+      width: calc(100% - 6rem);
+      padding: 0.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      max-width: 600px;
+      margin: 0 auto;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    .jv-progress-counter {
+      font-size: 0.9rem;
+      color: var(--jv-text-secondary);
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .jv-progress-counter i {
+      font-size: 0.8rem;
+      color: var(--jv-primary-color);
+    }
+    
+    .jv-progress-bar {
+      height: 4px;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    
+    .jv-progress-fill {
+      height: 100%;
+      background-color: var(--jv-primary-color);
+      border-radius: 2px;
+      transition: width 0.3s ease-out;
+    }
+    
+    .theme-nature .jv-progress-fill {
+      background-color: #2abb9b;
+    }
+    
+    .theme-nature .jv-progress-counter i {
+      color: #2abb9b;
+    }
+    
+    .theme-ocean .jv-progress-fill {
+      background-color: #3498db;
+    }
+    
+    .theme-ocean .jv-progress-counter i {
+      color: #3498db;
+    }
+    
+    .theme-candy .jv-progress-fill {
+      background-color: #e74c3c;
+    }
+    
+    .theme-candy .jv-progress-counter i {
+      color: #e74c3c;
+    }
+    
+    .theme-classic .jv-progress-fill {
+      background-color: #0f172a;
+    }
+    
+    .theme-classic .jv-progress-counter i {
+      color: #0f172a;
+    }
+
+    .jv-modal-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      z-index: 10;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .jv-modal-nav:hover {
+      background-color: var(--jv-primary-color);
+    }
+
+    .jv-modal-nav:hover i {
+      color: white !important;
+    }
+
+    .jv-modal-nav.prev {
+      left: 10px;
+    }
+
+    .jv-modal-nav.next {
+      right: 10px;
+    }
+
+    .jv-modal-nav i {
+      font-size: 1.4rem;
+      color: var(--jv-primary-color);
+      transition: color 0.3s ease;
+    }
+
+    .jv-modal-nav.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+      background-color: rgba(200, 200, 200, 0.5);
+    }
+
+    .jv-modal-nav.disabled:hover {
+      transform: translateY(-50%);
+      background-color: rgba(200, 200, 200, 0.5);
+    }
+    
+    .jv-modal-nav.disabled i {
+      color: #999;
+    }
+
+    /* 主題相關的 Modal 樣式 */
+    .jv-modal.theme-rainbow .jv-word-header {
+      border-bottom-color: var(--jv-primary-color);
+    }
+
+    .jv-modal.theme-rainbow .jv-word-header h2 {
+      color: var(--jv-primary-color);
+    }
+
+    .jv-modal.theme-rainbow .jv-example {
+      background-color: rgba(99, 102, 241, 0.08);
+      border-left-color: var(--jv-primary-color);
+    }
+
+    .jv-modal.theme-rainbow .jv-modal-nav i {
+      color: var(--jv-primary-color);
+    }
+
+    .jv-modal.theme-rainbow .jv-pronunciation-btn {
+      color: var(--jv-primary-color);
+      background-color: rgba(99, 102, 241, 0.1);
+    }
+
+    .jv-modal.theme-rainbow .jv-pronunciation-btn:hover {
+      background-color: rgba(99, 102, 241, 0.2);
+    }
+
+    .jv-modal.theme-rainbow .jv-example-en {
+      color: var(--jv-primary-dark);
+    }
+
+    .jv-modal.theme-rainbow .jv-video-toggle {
+      color: var(--jv-primary-color);
+    }
+
+    .jv-modal.theme-nature .jv-word-header {
+      border-bottom-color: #2abb9b;
+    }
+
+    .jv-modal.theme-nature .jv-word-header h2 {
+      color: #2abb9b;
+    }
+
+    .jv-modal.theme-nature .jv-example {
+      background-color: rgba(42, 187, 155, 0.1);
+      border-left-color: #2abb9b;
+    }
+
+    .jv-modal.theme-nature .jv-modal-nav i {
+      color: #2abb9b;
+    }
+
+    .jv-modal.theme-nature .jv-modal-nav:hover {
+      background-color: #2abb9b;
+    }
+
+    .jv-modal.theme-nature .jv-pronunciation-btn {
+      color: #2abb9b;
+      background-color: rgba(42, 187, 155, 0.1);
+    }
+
+    .jv-modal.theme-nature .jv-pronunciation-btn:hover {
+      background-color: rgba(42, 187, 155, 0.2);
+    }
+
+    .jv-modal.theme-nature .jv-example-en {
+      color: #2abb9b;
+    }
+
+    .jv-modal.theme-nature .jv-video-toggle {
+      color: #2abb9b;
+    }
+
+    .jv-modal.theme-ocean .jv-word-header {
+      border-bottom-color: #3498db;
+    }
+
+    .jv-modal.theme-ocean .jv-word-header h2 {
+      color: #3498db;
+    }
+
+    .jv-modal.theme-ocean .jv-example {
+      background-color: rgba(52, 152, 219, 0.1);
+      border-left-color: #3498db;
+    }
+
+    .jv-modal.theme-ocean .jv-modal-nav i {
+      color: #3498db;
+    }
+
+    .jv-modal.theme-ocean .jv-modal-nav:hover {
+      background-color: #3498db;
+    }
+
+    .jv-modal.theme-ocean .jv-pronunciation-btn {
+      color: #3498db;
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+
+    .jv-modal.theme-ocean .jv-pronunciation-btn:hover {
+      background-color: rgba(52, 152, 219, 0.2);
+    }
+
+    .jv-modal.theme-ocean .jv-example-en {
+      color: #3498db;
+    }
+
+    .jv-modal.theme-ocean .jv-video-toggle {
+      color: #3498db;
+    }
+
+    .jv-modal.theme-candy .jv-word-header {
+      border-bottom-color: #e74c3c;
+    }
+
+    .jv-modal.theme-candy .jv-word-header h2 {
+      color: #e74c3c;
+    }
+
+    .jv-modal.theme-candy .jv-example {
+      background-color: rgba(231, 76, 60, 0.1);
+      border-left-color: #e74c3c;
+    }
+
+    .jv-modal.theme-candy .jv-modal-nav i {
+      color: #e74c3c;
+    }
+
+    .jv-modal.theme-candy .jv-modal-nav:hover {
+      background-color: #e74c3c;
+    }
+
+    .jv-modal.theme-candy .jv-pronunciation-btn {
+      color: #e74c3c;
+      background-color: rgba(231, 76, 60, 0.1);
+    }
+
+    .jv-modal.theme-candy .jv-pronunciation-btn:hover {
+      background-color: rgba(231, 76, 60, 0.2);
+    }
+
+    .jv-modal.theme-candy .jv-example-en {
+      color: #e74c3c;
+    }
+
+    .jv-modal.theme-candy .jv-video-toggle {
+      color: #e74c3c;
+    }
+
+    .jv-modal.theme-classic .jv-word-header {
+      border-bottom-color: #0f172a;
+    }
+
+    .jv-modal.theme-classic .jv-word-header h2 {
+      color: #0f172a;
+    }
+
+    .jv-modal.theme-classic .jv-example {
+      background-color: rgba(15, 23, 42, 0.1);
+      border-left-color: #0f172a;
+    }
+
+    .jv-modal.theme-classic .jv-modal-nav i {
+      color: #0f172a;
+    }
+
+    .jv-modal.theme-classic .jv-modal-nav:hover {
+      background-color: #0f172a;
+    }
+
+    .jv-modal.theme-classic .jv-pronunciation-btn {
+      color: #0f172a;
+      background-color: rgba(15, 23, 42, 0.1);
+    }
+
+    .jv-modal.theme-classic .jv-pronunciation-btn:hover {
+      background-color: rgba(15, 23, 42, 0.2);
+    }
+
+    .jv-modal.theme-classic .jv-example-en {
+      color: #0f172a;
+    }
+
+    .jv-modal.theme-classic .jv-video-toggle {
+      color: #0f172a;
+    }
+
+    .jv-word-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      padding: 0;
+      margin: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .jv-word-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .jv-word-title {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--jv-primary-color);
+      margin-bottom: 0.25rem;
+      letter-spacing: 0.5px;
+      transform: translateZ(0);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    /* 新增針對WordPress的樣式覆蓋 */
+    .jv-modal-content .jv-word-header h2,
+    .jv-modal-content h2.jv-word-title {
+      clear: none !important;
+      margin: 4rem 0 0.25rem 0 !important;
+      padding: 0 !important;
+      text-align: center !important;
+      font-size: 3rem !important;
+      font-weight: 700 !important;
+    }
+
+    /* 發音與設定按鈕容器 */
+    .jv-speech-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 1.5rem auto;
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      gap: 1.5rem;
+    }
+    
+    .jv-pronunciation-btn {
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      color: var(--jv-primary-color);
+      opacity: 0.8;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background-color: rgba(99, 102, 241, 0.1);
+      margin: 0;
+    }
+
+    .jv-pronunciation-btn:hover {
+      opacity: 1;
+      background-color: rgba(99, 102, 241, 0.2);
+    }
+    
+    /* 切換按鈕樣式 */
+    .jv-voice-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin: 0;
+      padding: 0.4rem 0.8rem;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      color: var(--jv-text-secondary);
+      background-color: rgba(99, 102, 241, 0.05);
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    
+    .jv-voice-toggle:hover {
+      background-color: rgba(99, 102, 241, 0.1);
+    }
+    
+    .jv-voice-toggle.female {
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    
+    .jv-voice-toggle.male {
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    
+    .jv-voice-toggle.female span.female-text {
+      font-weight: 600;
+      color: var(--jv-primary-color);
+    }
+    
+    .jv-voice-toggle.female span.male-text {
+      font-weight: normal;
+      color: rgba(0, 0, 0, 0.4);
+    }
+    
+    .jv-voice-toggle.male span.male-text {
+      font-weight: 600;
+      color: var(--jv-primary-color);
+    }
+    
+    .jv-voice-toggle.male span.female-text {
+      font-weight: normal;
+      color: rgba(0, 0, 0, 0.4);
+    }
+    
+    /* 主題兼容 */
+    .theme-nature .jv-voice-toggle.female span.female-text,
+    .theme-nature .jv-voice-toggle.male span.male-text {
+      color: #2abb9b;
+    }
+    
+    .theme-nature .jv-voice-toggle {
+      background-color: rgba(42, 187, 155, 0.05);
+    }
+    
+    .theme-nature .jv-voice-toggle:hover {
+      background-color: rgba(42, 187, 155, 0.1);
+    }
+    
+    .theme-nature .jv-voice-toggle.female,
+    .theme-nature .jv-voice-toggle.male {
+      border: 1px solid rgba(42, 187, 155, 0.2);
+    }
+    
+    .theme-ocean .jv-voice-toggle.female span.female-text,
+    .theme-ocean .jv-voice-toggle.male span.male-text {
+      color: #3498db;
+    }
+    
+    .theme-ocean .jv-voice-toggle {
+      background-color: rgba(52, 152, 219, 0.05);
+    }
+    
+    .theme-ocean .jv-voice-toggle:hover {
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+    
+    .theme-ocean .jv-voice-toggle.female,
+    .theme-ocean .jv-voice-toggle.male {
+      border: 1px solid rgba(52, 152, 219, 0.2);
+    }
+    
+    .theme-candy .jv-voice-toggle.female span.female-text,
+    .theme-candy .jv-voice-toggle.male span.male-text {
+      color: #e74c3c;
+    }
+    
+    .theme-candy .jv-voice-toggle {
+      background-color: rgba(231, 76, 60, 0.05);
+    }
+    
+    .theme-candy .jv-voice-toggle:hover {
+      background-color: rgba(231, 76, 60, 0.1);
+    }
+    
+    .theme-candy .jv-voice-toggle.female,
+    .theme-candy .jv-voice-toggle.male {
+      border: 1px solid rgba(231, 76, 60, 0.2);
+    }
+    
+    .theme-classic .jv-voice-toggle.female span.female-text,
+    .theme-classic .jv-voice-toggle.male span.male-text {
+      color: #0f172a;
+    }
+    
+    .theme-classic .jv-voice-toggle {
+      background-color: rgba(15, 23, 42, 0.05);
+    }
+    
+    .theme-classic .jv-voice-toggle:hover {
+      background-color: rgba(15, 23, 42, 0.1);
+    }
+    
+    .theme-classic .jv-voice-toggle.female,
+    .theme-classic .jv-voice-toggle.male {
+      border: 1px solid rgba(15, 23, 42, 0.2);
+    }
+
+    .jv-word-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .jv-phonetic {
+      font-size: 1.25rem;
+      color: var(--jv-text-secondary);
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .jv-phonetic i {
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .jv-translation {
+      font-size: 1.6rem;
+      font-weight: 500;
+      color: var(--jv-text-secondary);
+      padding: 0.5rem 0;
+      display: inline-block;
+      position: relative;
+      border-radius: 4px;
+      text-align: center;
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .jv-translation i {
+      color: var(--jv-primary-color);
+    }
+
+    .jv-content-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      width: 100%;
+      align-items: center;
+    }
+
+    .jv-example {
+      background-color: rgba(99, 102, 241, 0.08);
+      padding: 1.25rem;
+      border-radius: 8px;
+      border-left: 3px solid var(--jv-primary-color);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      position: relative;
+      height: 100%;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .jv-example::before {
+      content: "";
+      position: absolute;
+      top: 0.5rem;
+      left: 0.75rem;
+      font-size: 2rem;
+      color: rgba(99, 102, 241, 0.15);
+      font-family: serif;
+      line-height: 1;
+    }
+
+    .jv-example-icon {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .jv-example-en {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--jv-primary-dark);
+      margin-bottom: 0.5rem;
+      line-height: 1.5;
+    }
+
+    .jv-highlight {
+      position: relative;
+      display: inline;
+      background-color: rgba(99, 102, 241, 0.2);
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+
+    .theme-nature .jv-highlight {
+      background-color: rgba(42, 187, 155, 0.2);
+    }
+
+    .theme-ocean .jv-highlight {
+      background-color: rgba(52, 152, 219, 0.2);
+    }
+
+    .theme-candy .jv-highlight {
+      background-color: rgba(231, 76, 60, 0.2);
+    }
+
+    .theme-classic .jv-highlight {
+      background-color: rgba(15, 23, 42, 0.15);
+    }
+
+    .jv-example-cn {
+      font-size: 1.1rem;
+      color: var(--jv-text-secondary);
+      line-height: 1.6;
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .jv-example-cn i {
+      color: #888;
+      font-size: 0.9rem;
+      margin-top: 0.2rem;
+    }
+
+    .jv-video-section {
+      margin: 0 auto;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 600px;
+      cursor: pointer;
+    }
+
+    .jv-video-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: var(--jv-primary-color);
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      margin-bottom: 0.5rem;
+    }
+
+    .jv-video-toggle:hover {
+      background-color: rgba(99, 102, 141, 0.1);
+    }
+
+    .jv-video-section h3 {
+      font-size: 1.2rem;
+      color: var(--jv-primary-color);
+      margin-bottom: 0.75rem;
+      justify-content: center;
+    }
+
+    .jv-video-container {
+      flex: 1;
+      min-height: 200px;
+      width: 100%;
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      display: none;
+    }
+
+    .jv-video-container.active {
+      display: block;
+    }
+
+    .jv-video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 8px;
+    }
+
+    /* 視頻占位符樣式 */
+    .jv-video-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      gap: 1rem;
+      color: var(--jv-text-secondary);
+    }
+    
+    .jv-video-placeholder i {
+      font-size: 2rem;
+      opacity: 0.7;
+    }
+    
+    .jv-video-placeholder span {
+      font-size: 1rem;
+    }
+
+    .jv-no-video {
+      padding: 1.5rem;
+      text-align: center;
+      background-color: rgba(0,0,0,0.03);
+      border-radius: 8px;
+      color: var(--jv-text-secondary);
+      font-style: italic;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 80px;
+      gap: 0.5rem;
+    }
+
+    .jv-no-video i {
+      color: var(--jv-text-secondary);
+    }
+
+    /* 恢復並增強關閉按鈕樣式 */
+    .jv-modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0, 0, 0, 0.1);
+      border: none;
+      border-radius: 50%;
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1.5rem;
+      color: #333;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 10;
+    }
+
+    .jv-modal-close:hover {
+      background: rgba(0, 0, 0, 0.2);
+      transform: scale(1.1);
+    }
+
+    .jv-modal-close i {
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="jv-container">
+    <div class="jv-header">
+      <h1><i class="fas fa-book-open"></i> 字彙筆記</h1>
+    </div>
+
+    <div class="jv-word-list">
+      <div class="jv-search-container">
+        <div class="jv-search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="jv-search-input" placeholder="搜尋單字..." autocomplete="off">
+          <i class="fas fa-times jv-clear-search" id="jv-clear-search"></i>
+        </div>
+        <div class="jv-search-results" id="jv-search-results"></div>
+      </div>
+      <div class="jv-theme-selector">
+        <div class="jv-theme-option selected" data-theme="rainbow">預設主題</div>
+        <div class="jv-theme-option" data-theme="nature">自然主題</div>
+        <div class="jv-theme-option" data-theme="ocean">海洋主題</div>
+        <div class="jv-theme-option" data-theme="candy">甜點主題</div>
+        <div class="jv-theme-option" data-theme="classic">深空主題</div>
+      </div>
+      <div class="jv-words-container"></div>
+    </div>
+  </div>
+
+  <div id="jv-loading" style="display: none;">
+    <div class="jv-loading-content">
+      <i class="fas fa-spinner fa-pulse fa-2x"></i>
+      <span>載入中...</span>
+    </div>
+  </div>
+
+  <!-- 新增 Modal 結構 -->
+  <div class="jv-modal" id="jv-word-modal">
+    <div class="jv-modal-content">
+      <button class="jv-modal-close" id="jv-modal-close">
+        <i class="fas fa-times"></i>
+      </button>
+      <div class="jv-progress-container">
+        <div class="jv-progress-counter">
+          <i class="fas fa-book-reader"></i>
+          <span id="jv-progress-text">0/0</span>
+        </div>
+        <div class="jv-progress-bar">
+          <div class="jv-progress-fill" id="jv-progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="jv-modal-nav prev" id="jv-modal-prev">
+        <i class="fas fa-chevron-left"></i>
+      </div>
+      <div class="jv-modal-nav next" id="jv-modal-next">
+        <i class="fas fa-chevron-right"></i>
+      </div>
+      <div class="jv-word-detail">
+        <div class="jv-word-header">
+          <h2 class="jv-word-title">
+            <span class="jv-word-text"></span>
+          </h2>
+          <div class="jv-word-info">
+            <div class="jv-phonetic"><span class="jv-phonetic-text"></span></div>
+            <div class="jv-translation"><span class="jv-translation-text"></span></div>
+          </div>
+        </div>
+        <div class="jv-content-container">
+          <div class="jv-example">
+            <div class="jv-example-icon"><i class="fas fa-quote-left"></i>例句</div>
+            <div class="jv-example-en"></div>
+            <div class="jv-example-cn"><i class="fas fa-globe-asia"></i><span class="jv-example-cn-text"></span></div>
+          </div>
+          
+          <!-- 發音與設定按鈕容器 -->
+          <div class="jv-speech-controls">
+            <!-- 男女聲切換按鈕 -->
+            <button class="jv-voice-toggle female" id="jv-voice-toggle">
+              <span class="female-text">女聲</span>
+              <span>/</span>
+              <span class="male-text">男聲</span>
+            </button>
+            
+            <button class="jv-pronunciation-btn">
+              <i class="fas fa-volume-up"></i>
+            </button>
+          </div>
+          
+          <div class="jv-video-section" id="jv-video-section">
+            <div class="jv-video-toggle">
+              <i class="fas fa-film"></i>
+              <span>查看相關影片</span>
+              <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="jv-video-container" id="jv-video-container"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://ys-fang.github.io/quickNav/quicknav.js"></script>
+  <script>
+    // 常數定義
+    const CONSTANTS = {
+      SPREADSHEET_ID: "1wSHAL3piJGEJ8EnoyK_W9kkvL42GQYId35UEhMzHTZY",
+      GID: "0"
+    };
+
+    // 工具函數
+    const Utils = {
+      showLoading: (isLoading) => {
+        document.getElementById('jv-loading').style.display = isLoading ? 'flex' : 'none';
+      },
+
+      getUrlParam: (param) => {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      },
+
+      addTouchFeedback: (element) => {
+        if (!element) return;
+        element.addEventListener('touchstart', () => {
+          element.style.transform = 'scale(0.95)';
+          element.style.transition = 'transform 0.1s ease';
+        }, { passive: true });
+
+        element.addEventListener('touchend', () => {
+          element.style.transform = 'scale(1)';
+        }, { passive: true });
+      }
+    };
+
+    // 主要功能類
+    class WordWall {
+      constructor() {
+        this.vocabularyData = [];
+        this.selectedTheme = localStorage.getItem('jv-theme') || 'rainbow';
+        this.currentWordIndex = -1;
+        this.speechSettings = {
+          gender: localStorage.getItem('jv-voice-gender') || 'female',
+          rate: parseFloat(1.0)
+        };
+        this.voicesLoaded = false;
+        this.femaleVoices = [];
+        this.maleVoices = [];
+        this.setupEventListeners();
+        this.initSpeechVoices();
+        this.checkUrlAndLoad();
+        this.initSearch();
+        this.applyTheme(this.selectedTheme);
+      }
+
+      setupEventListeners() {
+        const themeOptions = document.querySelectorAll('.jv-theme-option');
+        themeOptions.forEach(option => {
+          Utils.addTouchFeedback(option);
+          
+          option.addEventListener('click', () => {
+            themeOptions.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            this.selectedTheme = option.dataset.theme;
+            
+            // 保存主題選擇到 localStorage
+            localStorage.setItem('jv-theme', this.selectedTheme);
+            
+            // 應用主題
+            this.applyTheme(this.selectedTheme);
+          });
+        });
+
+        // 語音性別切換
+        const voiceToggle = document.getElementById('jv-voice-toggle');
+        voiceToggle.addEventListener('click', () => {
+          if (voiceToggle.classList.contains('female')) {
+            voiceToggle.classList.remove('female');
+            voiceToggle.classList.add('male');
+            this.speechSettings.gender = 'male';
+          } else {
+            voiceToggle.classList.remove('male');
+            voiceToggle.classList.add('female');
+            this.speechSettings.gender = 'female';
+          }
+          localStorage.setItem('jv-voice-gender', this.speechSettings.gender);
+        });
+        
+        // 初始化性別按鈕狀態
+        if (this.speechSettings.gender === 'male') {
+          voiceToggle.classList.remove('female');
+          voiceToggle.classList.add('male');
+        }
+
+        // Modal 相關事件監聽
+        const modal = document.getElementById('jv-word-modal');
+        const closeBtn = document.getElementById('jv-modal-close');
+        const prevBtn = document.getElementById('jv-modal-prev');
+        const nextBtn = document.getElementById('jv-modal-next');
+
+        closeBtn.addEventListener('click', () => {
+          modal.style.display = 'none';
+        });
+
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.style.display = 'none';
+          }
+        });
+
+        // 導航按鈕事件
+        prevBtn.addEventListener('click', () => {
+          if (this.currentWordIndex > 1) {
+            this.showWordDetail(this.vocabularyData[this.currentWordIndex - 1], this.currentWordIndex - 1);
+          }
+        });
+
+        nextBtn.addEventListener('click', () => {
+          if (this.currentWordIndex < this.vocabularyData.length - 1) {
+            this.showWordDetail(this.vocabularyData[this.currentWordIndex + 1], this.currentWordIndex + 1);
+          }
+        });
+
+        // 鍵盤事件
+        document.addEventListener('keydown', (e) => {
+          if (modal.style.display !== 'flex') return;
+
+          switch (e.key) {
+            case 'Escape':
+              modal.style.display = 'none';
+              break;
+            case 'ArrowLeft':
+              if (this.currentWordIndex > 1) {
+                this.showWordDetail(this.vocabularyData[this.currentWordIndex - 1], this.currentWordIndex - 1);
+              }
+              break;
+            case 'ArrowRight':
+              if (this.currentWordIndex < this.vocabularyData.length - 1) {
+                this.showWordDetail(this.vocabularyData[this.currentWordIndex + 1], this.currentWordIndex + 1);
+              }
+              break;
+            case ' ': // 空格鍵播放發音
+              e.preventDefault(); // 防止頁面滾動
+              pronBtn.click();
+              break;
+            case 'v': // v 鍵切換視頻顯示
+              if (videoSection.style.display !== 'none') {
+                videoToggle.click();
+              }
+              break;
+          }
+        });
+      }
+
+      initSpeechVoices() {
+        // 如果瀏覽器支援 speechSynthesis onvoiceschanged 事件，則預先載入聲音
+        if ('onvoiceschanged' in window.speechSynthesis) {
+          if (!this.voicesLoaded) {
+            this.voicesLoaded = true;
+            window.speechSynthesis.onvoiceschanged = () => {
+              this.prepareVoices();
+            };
+          }
+        } else {
+          // 對於不支援 onvoiceschanged 事件的瀏覽器，直接載入聲音
+          this.prepareVoices();
+        }
+      }
+      
+      // 準備語音引擎
+      prepareVoices() {
+        const voices = window.speechSynthesis.getVoices();
+        const englishVoices = voices.filter(voice => voice.lang.includes('en-'));
+        
+        this.femaleVoices = englishVoices.filter(voice => {
+          return voice.name.includes('female') || voice.name.includes('Female') || 
+                voice.name.includes('Samantha') || voice.name.includes('Karen') || 
+                voice.name.includes('Tessa') || voice.name.includes('Victoria');
+        });
+        
+        this.maleVoices = englishVoices.filter(voice => {
+          return voice.name.includes('male') || voice.name.includes('Male') || 
+                voice.name.includes('Daniel') || voice.name.includes('Thomas') || 
+                voice.name.includes('David');
+        });
+        
+        // 如果沒有找到特定性別的聲音，使用任何可用的英文聲音
+        if (this.femaleVoices.length === 0) this.femaleVoices = englishVoices;
+        if (this.maleVoices.length === 0) this.maleVoices = englishVoices;
+      }
+
+      showWordDetail(wordData, index) {
+        const modal = document.getElementById('jv-word-modal');
+        const title = modal.querySelector('.jv-word-text');
+        const phonetic = modal.querySelector('.jv-phonetic-text');
+        const translation = modal.querySelector('.jv-translation-text');
+        const exampleEn = modal.querySelector('.jv-example-en');
+        const exampleCn = modal.querySelector('.jv-example-cn-text');
+        const videoContainer = document.getElementById('jv-video-container');
+        const videoSection = document.getElementById('jv-video-section');
+        const prevBtn = document.getElementById('jv-modal-prev');
+        const nextBtn = document.getElementById('jv-modal-next');
+        const pronBtn = modal.querySelector('.jv-pronunciation-btn');
+        const videoToggle = modal.querySelector('.jv-video-toggle');
+        
+        // 確保語音引擎已經初始化
+        this.initSpeechVoices();
+        
+        // 更新進度指示器
+        const progressText = document.getElementById('jv-progress-text');
+        const progressFill = document.getElementById('jv-progress-fill');
+        const totalWords = this.vocabularyData.length - 1; // 減去標題行
+        progressText.textContent = `${index}/${totalWords}`;
+        progressFill.style.width = `${(index/totalWords) * 100}%`;
+
+        // 更新當前索引
+        this.currentWordIndex = index;
+
+        // 更新導航按鈕狀態
+        prevBtn.classList.toggle('disabled', index <= 1);
+        nextBtn.classList.toggle('disabled', index >= this.vocabularyData.length - 1);
+
+        // 更新 modal 內容
+        title.textContent = wordData[0] || '';
+        phonetic.textContent = wordData[1] || '';
+        translation.textContent = wordData[2] || '';
+        
+        // 處理例句和標記
+        const enSentence = wordData[3] || '';
+        const cnSentence = wordData[4] || '';
+        let markStart = wordData[6] ? parseInt(wordData[6]) : 0;
+        let markEnd = wordData[7] ? parseInt(wordData[7]) : 0;
+        
+        // 處理以空白為單位的標記
+        if (markStart > 0 && markEnd >= markStart && enSentence) {
+          // 將例句分割成單詞塊
+          const words = enSentence.split(/\s+/);
+          
+          // 確保標記在有效範圍內
+          markStart = Math.min(markStart, words.length);
+          markEnd = Math.min(markEnd, words.length);
+          
+          // 根據標記範圍標記單詞
+          const result = [];
+          for (let i = 0; i < words.length; i++) {
+            if (i + 1 >= markStart && i + 1 <= markEnd) {
+              // 加入高亮標記
+              result.push(`<span class="jv-highlight">${words[i]}</span>`);
+            } else {
+              result.push(words[i]);
+            }
+          }
+          
+          // 組合結果，保留原始空格格式
+          exampleEn.innerHTML = result.join(' ');
+        } else {
+          // 嘗試尋找單字在句子中的位置
+          const word = wordData[0].toLowerCase();
+          const lowerSentence = enSentence.toLowerCase();
+          const wordIndex = lowerSentence.indexOf(word);
+          
+          if (wordIndex >= 0) {
+            const before = enSentence.substring(0, wordIndex);
+            const highlight = enSentence.substring(wordIndex, wordIndex + word.length);
+            const after = enSentence.substring(wordIndex + word.length);
+            exampleEn.innerHTML = `${before}<span class="jv-highlight">${highlight}</span>${after}`;
+          } else {
+            exampleEn.textContent = enSentence;
+          }
+        }
+        
+        exampleCn.textContent = cnSentence;
+        
+        // 設置發音按鈕點擊事件
+        pronBtn.onclick = () => {
+          // 發音控制參數
+          const speechInterval = 1.5; // 間隔秒數，可調整（單位：秒）
+          const speechRate = this.speechSettings.rate; // 使用用戶設定的語速
+          const voiceGender = this.speechSettings.gender; // 使用用戶設定的語音性別
+          
+          // 創建發音函數
+          const speak = (text, rate = speechRate) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = rate; // 設置語速
+            
+            // 使用預先載入的語音
+            if (voiceGender === 'female' && this.femaleVoices && this.femaleVoices.length > 0) {
+              utterance.voice = this.femaleVoices[0];
+            } else if (voiceGender === 'male' && this.maleVoices && this.maleVoices.length > 0) {
+              utterance.voice = this.maleVoices[0];
+            } else {
+              // 嘗試根據性別設置語音
+              const voices = window.speechSynthesis.getVoices();
+              const englishVoices = voices.filter(voice => voice.lang.includes('en-'));
+              
+              if (englishVoices.length > 0) {
+                // 根據性別篩選語音
+                let genderVoices = englishVoices.filter(voice => {
+                  if (voiceGender === 'female') {
+                    return voice.name.includes('female') || voice.name.includes('Female') || 
+                          voice.name.includes('Samantha') || voice.name.includes('Karen') || 
+                          voice.name.includes('Tessa') || voice.name.includes('Victoria');
+                  } else {
+                    return voice.name.includes('male') || voice.name.includes('Male') || 
+                          voice.name.includes('Daniel') || voice.name.includes('Thomas') || 
+                          voice.name.includes('David');
+                  }
+                });
+                
+                // 如果找到符合性別的語音，使用第一個；否則使用任意英文語音
+                utterance.voice = genderVoices.length > 0 ? genderVoices[0] : englishVoices[0];
+              }
+            }
+            
+            window.speechSynthesis.speak(utterance);
+          };
+          
+          // 獲取單字和例句
+          const word = wordData[0];
+          const sentence = wordData[3];
+          
+          // 執行發音序列
+          speak(word); // 念出單字一次
+          
+          // 間隔後念出單字第二次
+          setTimeout(() => {
+            speak(word);
+            
+            // 間隔後念出例句
+            setTimeout(() => {
+              speak(sentence);
+            }, speechInterval * 1000);
+          }, speechInterval * 1000);
+        };
+
+        // 處理影片嵌入
+        // 視頻區域切換功能
+        videoToggle.onclick = () => {
+          videoContainer.classList.toggle('active');
+          const chevron = videoToggle.querySelector('.fa-chevron-down, .fa-chevron-up');
+          
+          if (videoContainer.classList.contains('active')) {
+            chevron.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            videoToggle.querySelector('span').textContent = '隱藏相關影片';
+            
+            // 延遲載入YouTube影片，點擊後才載入，避免效能問題
+            if (wordData[5]) {
+              const videoUrl = this.convertToEmbedUrl(wordData[5]);
+              videoContainer.innerHTML = `<iframe src="${videoUrl}" allowfullscreen frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" loading="lazy"></iframe>`;
+            }
+            
+            // 暫停其他所有視頻
+            document.querySelectorAll('iframe').forEach(iframe => {
+              // 跳過當前視頻
+              if (iframe.parentNode !== videoContainer) {
+                // 通過重新設置src來暫停視頻
+                const src = iframe.src;
+                iframe.src = src;
+              }
+            });
+          } else {
+            chevron.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            videoToggle.querySelector('span').textContent = '查看相關影片';
+            
+            // 完全移除iframe並停止視頻播放
+            videoContainer.innerHTML = `<div class="jv-video-placeholder">
+              <i class="fas fa-film"></i>
+              <span>點擊上方按鈕載入影片</span>
+            </div>`;
+          }
+        };
+        
+        // 重置視頻容器狀態
+        videoContainer.classList.remove('active');
+        videoToggle.querySelector('i:last-child').className = 'fas fa-chevron-down';
+
+        if (wordData[5]) {
+          // 有視頻，顯示視頻部分
+          videoSection.style.display = 'flex';
+          // 不立即載入視頻，而是在用戶點擊後才載入
+          videoContainer.innerHTML = `<div class="jv-video-placeholder">
+            <i class="fas fa-film"></i>
+            <span>點擊上方按鈕載入影片</span>
+          </div>`;
+        } else {
+          // 沒有視頻，隱藏整個視頻部分
+          videoSection.style.display = 'none';
+        }
+
+        modal.style.display = 'flex';
+        modal.classList.add(`theme-${this.selectedTheme}`);
+      }
+
+      convertToEmbedUrl(url) {
+        // 處理 YouTube 影片連結
+        if (url && url.length) {
+          // 檢查是否已經是嵌入連結
+          if (url.includes('youtube.com/embed/')) {
+            return url;
+          }
+          
+          // 檢查是否直接是YouTube ID (11碼)
+          if (url.match(/^[a-zA-Z0-9_-]{11}$/)) {
+            return `https://www.youtube.com/embed/${url}?rel=0&modestbranding=1`;
+          }
+          
+          // 從完整URL中提取YouTube ID
+          const videoId = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i)?.[1];
+          return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : '';
+        }
+        return '';
+      }
+
+      checkUrlAndLoad() {
+        const label = Utils.getUrlParam('label');
+        if (label) {
+          this.loadVocabularyData(label);
+        }
+      }
+
+      async loadVocabularyData(label) {
+        Utils.showLoading(true);
+        try {
+          const url = `https://docs.google.com/spreadsheets/d/${CONSTANTS.SPREADSHEET_ID}/export?format=csv&gid=${CONSTANTS.GID}`;
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('無法載入試算表資料');
+
+          const csvText = await response.text();
+          if (!csvText.trim()) throw new Error('試算表內容為空');
+
+          const { data } = Papa.parse(csvText, { header: false });
+          if (!data?.length) throw new Error('解析後的資料為空');
+
+          const header = data.shift();
+          if (!header) throw new Error('無法提取表頭');
+
+          const filteredData = data.filter(row => row[0]?.toLowerCase() === label.toLowerCase());
+          if (!filteredData.length) throw new Error(`找不到標籤為 "${label}" 的資料`);
+
+          this.vocabularyData = [header.slice(1), ...filteredData.map(row => row.slice(1))];
+          this.renderWordList();
+        } catch (error) {
+          console.error('載入資料失敗:', error);
+          alert(`載入資料失敗：${error.message}`);
+        }
+        Utils.showLoading(false);
+      }
+
+      renderWordList() {
+        const words = this.vocabularyData.slice(1);
+        const container = document.querySelector('.jv-words-container');
+        container.innerHTML = '';
+        container.className = 'jv-words-container';
+        container.classList.add(`theme-${this.selectedTheme}`);
+        
+        const fragment = document.createDocumentFragment();
+        
+        words.forEach((wordData, index) => {
+          const english = wordData[0] || '';
+          const chinese = wordData[2] || '';
+          
+          if (!english) return;
+          
+          const wordItem = document.createElement('div');
+          wordItem.className = 'jv-word-item';
+          wordItem.style.cursor = 'pointer';
+          
+          const wordEn = document.createElement('div');
+          wordEn.className = 'jv-word-en';
+          wordEn.textContent = english;
+          
+          wordItem.appendChild(wordEn);
+          
+          if (chinese) {
+            const wordCn = document.createElement('div');
+            wordCn.className = 'jv-word-cn';
+            wordCn.textContent = chinese;
+            wordItem.appendChild(wordCn);
+          }
+
+          // 添加點擊事件
+          wordItem.addEventListener('click', () => {
+            this.showWordDetail(wordData, index + 1);
+          });
+          
+          fragment.appendChild(wordItem);
+        });
+        
+        container.appendChild(fragment);
+      }
+
+      // 應用主題到界面元素
+      applyTheme(theme) {
+        const wordsContainer = document.querySelector('.jv-words-container');
+        const modal = document.getElementById('jv-word-modal');
+        
+        // 更新主題選擇器的選中狀態
+        document.querySelectorAll('.jv-theme-option').forEach(option => {
+          if (option.dataset.theme === theme) {
+            option.classList.add('selected');
+          } else {
+            option.classList.remove('selected');
+          }
+        });
+        
+        // 應用主題到單詞容器
+        if (wordsContainer) {
+          wordsContainer.className = 'jv-words-container';
+          wordsContainer.classList.add(`theme-${theme}`);
+        }
+        
+        // 應用主題到模態框
+        if (modal) {
+          modal.className = 'jv-modal';
+          modal.classList.add(`theme-${theme}`);
+        }
+      }
+      
+      // 搜索功能初始化
+      initSearch() {
+        this.searchInput = document.getElementById('jv-search-input');
+        this.searchResults = document.getElementById('jv-search-results');
+        this.clearSearchBtn = document.getElementById('jv-clear-search');
+        
+        if (!this.searchInput || !this.searchResults || !this.clearSearchBtn) return;
+        
+        // 綁定搜索輸入事件
+        this.searchInput.addEventListener('input', this.handleSearch.bind(this));
+        
+        // 綁定清除搜索事件
+        this.clearSearchBtn.addEventListener('click', () => {
+          this.searchInput.value = '';
+          this.searchResults.innerHTML = '';
+          this.searchResults.classList.remove('active');
+          this.clearSearchBtn.classList.remove('visible');
+        });
+        
+        // 鍵盤導航相關
+        this.selectedResultIndex = -1;
+        
+        // 綁定鍵盤事件
+        this.searchInput.addEventListener('keydown', (e) => {
+          // 只在搜索結果顯示時處理鍵盤導航
+          if (!this.searchResults.classList.contains('active')) return;
+          
+          const items = this.searchResults.querySelectorAll('.jv-search-result-item');
+          if (items.length === 0) return;
+          
+          switch (e.key) {
+            case 'ArrowDown':
+              e.preventDefault(); // 防止頁面滾動
+              this.selectedResultIndex = (this.selectedResultIndex + 1) % items.length;
+              this.updateSelectedResult(items);
+              break;
+                
+            case 'ArrowUp':
+              e.preventDefault();
+              this.selectedResultIndex = this.selectedResultIndex <= 0 ? 
+                items.length - 1 : this.selectedResultIndex - 1;
+              this.updateSelectedResult(items);
+              break;
+                
+            case 'Enter':
+              e.preventDefault();
+              if (this.selectedResultIndex >= 0 && this.selectedResultIndex < items.length) {
+                items[this.selectedResultIndex].click();
+              }
+              break;
+                
+            case 'Escape':
+              e.preventDefault();
+              this.searchResults.classList.remove('active');
+              this.searchInput.blur();
+              break;
+          }
+        });
+        
+        // 點擊其他區域關閉搜索結果
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.jv-search-container')) {
+            this.searchResults.classList.remove('active');
+          }
+        });
+      }
+      
+      // 更新選中的搜索結果
+      updateSelectedResult(items) {
+        // 清除所有項目的選中狀態
+        items.forEach(item => item.classList.remove('selected'));
+        
+        // 設置當前選中項目
+        if (this.selectedResultIndex >= 0 && this.selectedResultIndex < items.length) {
+          const selectedItem = items[this.selectedResultIndex];
+          selectedItem.classList.add('selected');
+          
+          // 確保選中項在視圖中
+          const container = this.searchResults;
+          const itemTop = selectedItem.offsetTop;
+          const itemHeight = selectedItem.offsetHeight;
+          const containerTop = container.scrollTop;
+          const containerHeight = container.offsetHeight;
+          
+          if (itemTop < containerTop) {
+            // 如果項目在視圖上方，滾動到項目位置
+            container.scrollTop = itemTop;
+          } else if (itemTop + itemHeight > containerTop + containerHeight) {
+            // 如果項目在視圖下方，滾動使項目可見
+            container.scrollTop = itemTop + itemHeight - containerHeight;
+          }
+        }
+      }
+      
+      // 處理搜索
+      handleSearch() {
+        const query = this.searchInput.value.trim().toLowerCase();
+        
+        // 重置選中索引
+        this.selectedResultIndex = -1;
+        
+        // 清除按鈕顯示邏輯
+        if (query.length > 0) {
+          this.clearSearchBtn.classList.add('visible');
+        } else {
+          this.clearSearchBtn.classList.remove('visible');
+          this.searchResults.classList.remove('active');
+          this.searchResults.innerHTML = '';
+          return;
+        }
+        
+        // 篩選匹配結果
+        const results = this.searchWords(query);
+        
+        // 顯示搜索結果
+        this.renderSearchResults(query, results);
+      }
+      
+      // 搜索單詞（模糊匹配）
+      searchWords(query) {
+        if (!this.vocabularyData || this.vocabularyData.length <= 1) return [];
+        
+        // 跳過標題行，從索引1開始
+        const wordList = this.vocabularyData.slice(1);
+        
+        return wordList.filter(wordData => {
+          const word = wordData[0]?.toLowerCase() || '';
+          const translation = wordData[2]?.toLowerCase() || '';
+          
+          // 模糊匹配：單詞或翻譯包含查詢字符
+          return word.includes(query) || translation.includes(query);
+        }).slice(0, 6); // 最多顯示6個結果
+      }
+      
+      // 渲染搜索結果
+      renderSearchResults(query, results) {
+        this.searchResults.innerHTML = '';
+        
+        if (results.length === 0) {
+          this.searchResults.innerHTML = `<div class="jv-no-results">無匹配結果</div>`;
+          this.searchResults.classList.add('active');
+          return;
+        }
+        
+        const fragment = document.createDocumentFragment();
+        
+        results.forEach((wordData, index) => {
+          const word = wordData[0] || '';
+          const translation = wordData[2] || '';
+          
+          // 創建結果項
+          const resultItem = document.createElement('div');
+          resultItem.className = 'jv-search-result-item';
+          resultItem.dataset.index = index;
+          
+          // 高亮匹配部分
+          const highlightedWord = this.highlightMatch(word, query);
+          const highlightedTranslation = this.highlightMatch(translation, query);
+          
+          // 創建結果內容
+          const wordElem = document.createElement('div');
+          wordElem.className = 'jv-search-result-word';
+          wordElem.innerHTML = highlightedWord;
+          
+          const translationElem = document.createElement('div');
+          translationElem.className = 'jv-search-result-translation';
+          translationElem.innerHTML = highlightedTranslation;
+          
+          resultItem.appendChild(wordElem);
+          resultItem.appendChild(translationElem);
+          
+          // 綁定點擊事件
+          resultItem.addEventListener('click', () => {
+            // 計算原始數據中的索引（+1是因為跳過了標題行）
+            const wordIndex = this.vocabularyData.findIndex(data => 
+              data[0] === wordData[0] && data[2] === wordData[2]);
+            
+            if (wordIndex > 0) {
+              this.showWordDetail(wordData, wordIndex);
+              
+              // 清空搜索
+              this.searchInput.value = '';
+              this.searchResults.classList.remove('active');
+              this.clearSearchBtn.classList.remove('visible');
+            }
+          });
+          
+          // 鼠標懸停事件 - 更新選中索引
+          resultItem.addEventListener('mouseenter', () => {
+            this.selectedResultIndex = parseInt(resultItem.dataset.index);
+            this.updateSelectedResult(this.searchResults.querySelectorAll('.jv-search-result-item'));
+          });
+          
+          fragment.appendChild(resultItem);
+        });
+        
+        this.searchResults.appendChild(fragment);
+        this.searchResults.classList.add('active');
+      }
+      
+      // 高亮匹配文本
+      highlightMatch(text, query) {
+        if (!text || !query) return text;
+        
+        const lowerText = text.toLowerCase();
+        const lowerQuery = query.toLowerCase();
+        
+        // 如果文本中不包含搜索詞，直接返回
+        if (!lowerText.includes(lowerQuery)) return text;
+        
+        // 獲取匹配的起始位置
+        const startIndex = lowerText.indexOf(lowerQuery);
+        const endIndex = startIndex + lowerQuery.length;
+        
+        // 分割文本並添加高亮
+        const before = text.substring(0, startIndex);
+        const match = text.substring(startIndex, endIndex);
+        const after = text.substring(endIndex);
+        
+        return `${before}<span class="jv-search-highlight">${match}</span>${after}`;
+      }
+    }
+
+    // 初始化
+    new WordWall();
+    
+    // 初始化QuickNav模組
+    document.addEventListener('DOMContentLoaded', function() {
+      QuickNav.init({
+        theme: 'light',
+        position: 'top-left'
+      });
+    });
+  </script>
+</body>
+</html>

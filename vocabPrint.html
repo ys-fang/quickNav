@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vacabPrint｜字彙列印｜均一教育平台</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- CSS Styles -->
+  <link rel="stylesheet" href="https://ys-fang.github.io/quickNav/quicknav.css">
+  <script src="https://ys-fang.github.io/quickNav/quicknav.js"></script>
+  <style>
+    /* ===== CSS 變數 ===== */
+    :root {
+      --primary-color: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #c7d2fe;
+      --secondary-color: #ec4899;
+      --secondary-dark: #db2777;
+      --accent-color: #10b981;
+      --accent-dark: #059669;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-light: #fff;
+      --bg-primary: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e0e0e0;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 12px;
+      --spacing-lg: 16px;
+      --spacing-xl: 20px;
+      --border-radius-sm: 4px;
+      --border-radius-md: 6px;
+      --border-radius-lg: 8px;
+      --font-size-sm: 0.9rem;
+      --font-size-md: 1rem;
+      --font-size-lg: 1.1rem;
+      --font-size-xl: 1.4rem;
+    }
+
+    /* 通用樣式 */
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--spacing-lg);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: var(--spacing-xl);
+      color: var(--primary-color);
+      font-size: var(--font-size-xl);
+    }
+
+    /* 功能區樣式 */
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: var(--spacing-xl);
+      gap: var(--spacing-md);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      background-color: var(--accent-color);
+      color: var(--text-light);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: none;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: var(--font-size-sm);
+    }
+
+    .btn:hover {
+      background-color: var(--accent-dark);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background-color: var(--secondary-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--secondary-dark);
+    }
+
+    /* 載入提示 */
+    #loading {
+      position: fixed; /* 修改：使用固定定位 */
+      top: 50%; /* 垂直置中 */
+      left: 50%; /* 水平置中 */
+      transform: translate(-50%, -50%); /* 調整位置以確保完全置中 */
+      text-align: center;
+      font-size: var(--font-size-lg);
+      color: var(--text-secondary);
+      margin: 0; /* 移除外邊距 */
+      z-index: 1000; /* 確保在其他元素之上 */
+    }
+
+    /* 字卡樣式 */
+    .vocabulary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--spacing-lg);
+    }
+
+    .vocabulary-card {
+      background-color: var(--bg-card);
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: var(--spacing-lg);
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      break-inside: avoid-page;
+    }
+
+    .vocabulary-card h3 {
+      margin-top: 0;
+      margin-bottom: var(--spacing-sm);
+      color: var(--primary-color);
+      font-size: var(--font-size-lg);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: var(--spacing-sm);
+    }
+
+    .vocabulary-item {
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .vocabulary-item strong {
+      color: var(--secondary-color);
+    }
+
+    .example {
+      font-style: italic;
+      margin-top: var(--spacing-sm);
+      padding-left: var(--spacing-md);
+      border-left: 2px solid var(--primary-light);
+    }
+
+    /* 表格模式樣式 */
+    .vocabulary-table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+    
+    .vocabulary-table-page {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      page-break-after: always;
+      break-after: page;
+      width: 100%;
+      height: 100%;
+      display: block;
+      box-sizing: border-box;
+      margin-bottom: 0.5cm;
+    }
+
+    /* 新增：取消最後一頁表格的強制分頁和底部邊距 */
+    .vocabulary-table-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+      margin-bottom: 0;
+    }
+
+    .vocabulary-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto; /* 自動調整表格布局 */
+      height: 100%;
+      font-size: 0.85rem; /* 縮小字體 */
+      border: 1px solid #ccc; /* 表格外框 */
+    }
+
+    .vocabulary-table th,
+    .vocabulary-table td {
+      border: 1px solid #ddd; /* 更淺的邊框 */
+      padding: 0.1cm; /* 更小的間距 */
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle; /* 中央對齊 */
+      line-height: 1.2; /* 縮小行高 */
+      white-space: normal; /* 自動換行 */
+      max-height: 2.5em; /* 限制最大高度 */
+    }
+    
+    /* 英文、音標和例句不換行 */
+    .vocabulary-table td:nth-child(2),  /* 英文 */
+    .vocabulary-table td:nth-child(3),  /* 音標 */
+    .vocabulary-table td:nth-child(5) { /* 例句 */
+      white-space: nowrap;
+    }
+    
+    /* 表格欄位寬度設定 - 針對直向A4 */
+    .vocabulary-table th:nth-child(1), 
+    .vocabulary-table td:nth-child(1) {
+      width: 5%; /* 序號欄位 */
+      text-align: center;
+      font-size: 0.5rem; /* 序號欄位字體更小 */
+    }
+    
+    .vocabulary-table th:nth-child(2), 
+    .vocabulary-table td:nth-child(2) {
+      width: 15%; /* 英文欄位 */
+    }
+    
+    .vocabulary-table th:nth-child(3), 
+    .vocabulary-table td:nth-child(3) {
+      width: 15%; /* 音標欄位 */
+    }
+    
+    .vocabulary-table th:nth-child(4), 
+    .vocabulary-table td:nth-child(4) {
+      width: 20%; /* 中譯欄位 */
+    }
+    
+    .vocabulary-table th:nth-child(5), 
+    .vocabulary-table td:nth-child(5) {
+      width: 25%; /* 例句欄位 */
+    }
+    
+    .vocabulary-table th:nth-child(6), 
+    .vocabulary-table td:nth-child(6) {
+      width: 20%; /* 翻譯欄位 */
+    }
+    
+    /* 對例句和翻譯設置較小的字體 */
+    .vocabulary-table td:nth-child(5), 
+    .vocabulary-table td:nth-child(6) {
+      font-size: 0.8rem; /* 例句和翻譯字體更小 */
+    }
+    
+    .vocabulary-table th {
+      background-color: #f0f4ff; /* 更淺的標題背景 */
+      color: #333; /* 更深的標題文字 */
+      font-weight: bold;
+      padding: 0.1cm; /* 標題更緊湊 */
+      font-size: 0.8rem; /* 標題字體更小 */
+      border-bottom: 2px solid #bbc; /* 標題下方邊框加粗 */
+    }
+
+    .vocabulary-table tr:nth-child(even) {
+      background-color: #f9fafc; /* 更淺的間隔色 */
+    }
+    
+    .vocabulary-table tr:last-child td {
+      border-bottom: none; /* 移除最後一行的底部邊框 */
+    }
+    
+    .vocabulary-table tr td:last-child {
+      border-right: none; /* 移除最後一列的右側邊框 */
+    }
+
+    .vocabulary-table tr {
+      height: auto; /* 自動調整高度 */
+    }
+
+    /* 列印樣式 */
+    @media print {
+      body {
+        background-color: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 0.85rem !important; /* 列印時字體縮小 */
+        -webkit-print-color-adjust: exact; /* 嘗試強制瀏覽器應用顏色，但我們會覆蓋為黑白 */
+        print-color-adjust: exact;
+      }
+
+      .controls, #loading {
+        display: none !important;
+      }
+      
+      .print-hint {
+        display: none !important;
+      }
+
+      .vocabulary-card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important; /* 使用灰色邊框代替彩色 */
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        display: inline-block !important;
+        width: 48% !important;
+        margin: 0.5% !important;
+        vertical-align: top !important;
+        box-sizing: border-box !important;
+        background-color: white !important; /* 強制卡片背景為白色 */
+      }
+
+      /* 新增：強制卡片內文字顏色 */
+      .vocabulary-card h3,
+      .vocabulary-card .vocabulary-item,
+      .vocabulary-card .vocabulary-item strong,
+      .vocabulary-card .example {
+        color: black !important;
+        border-color: #ccc !important; /* 將 h3 下邊框和 example 左邊框改為灰色 */
+      }
+
+      .vocabulary-grid {
+        display: block !important;
+        width: 100% !important;
+      }
+
+      h1 {
+        font-size: 20pt !important;
+        margin-bottom: 15pt !important;
+        color: black !important;
+      }
+
+      .vocabulary-table {
+        font-size: 0.75rem !important; /* 列印時表格字體更小 */
+        line-height: 1.1 !important; /* 列印時行高更緊湊 */
+        border: 0.5px solid #aaa !important;
+        background-color: white !important; /* 強制表格背景為白色 */
+      }
+      
+      .vocabulary-table th,
+      .vocabulary-table td {
+        padding: 0.05cm !important; /* 列印時間距更小 */
+        /* max-height: 2.5em !important; */ /* 移除通用的最大高度限制 */
+        border: 0.5px solid #ccc !important; /* 列印時邊框更淺更細 */
+        color: black !important; /* 強制表格文字為黑色 */
+        background-color: white !important; /* 強制儲存格背景為白色 */
+        vertical-align: top !important; /* 讓內容從頂部開始對齊，方便閱讀換行內容 */
+      }
+      
+      /* 新增：覆蓋表格標頭樣式 */
+      .vocabulary-table th {
+        font-weight: bold !important; /* 保留粗體 */
+        border-bottom: 1px solid #aaa !important; /* 稍微加深標頭下邊框 */
+      }
+
+      /* 新增：移除表格間隔行背景色 */
+      .vocabulary-table tr:nth-child(even) {
+        background-color: white !important;
+      }
+      
+      /* 對例句和翻譯設置更小的字體 */
+      .vocabulary-table td:nth-child(5), 
+      .vocabulary-table td:nth-child(6) {
+        font-size: 0.7rem !important; /* 列印時例句和翻譯字體更小 */
+      }
+      
+      /* 列印時移除空行 */
+      .vocabulary-table tr:empty,
+      .vocabulary-table td:empty {
+        border: none !important;
+      }
+
+      /* 表格模式專用列印設定 */
+      html.table-mode-print, body.table-mode-print {
+        width: 21cm !important; /* A4寬度 */
+        height: 29.7cm !important; /* A4高度 */
+      }
+      
+      body.table-mode-print .vocabulary-table-page {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+      
+      /* 新增：確保列印時最後一頁也沒有強制分頁 */
+      body.table-mode-print .vocabulary-table-page:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+      
+      /* 英文不換行 */
+      .vocabulary-table td:nth-child(2) { /* 英文 */
+        white-space: nowrap !important; 
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      
+      /* 修改：音標欄位樣式 - 縮小字體、保持單行、移除省略 */
+      .vocabulary-table td:nth-child(3) { /* 音標 */
+        white-space: nowrap !important; 
+        overflow: visible !important; /* 允許稍微溢出，避免截斷 */
+        text-overflow: clip !important; /* 不顯示省略號 */
+        font-size: 0.65rem !important; /* 明顯縮小字體 */
+        max-height: none !important; /* 確保無高度限制 */
+        line-height: 1 !important; /* 配合小字體，行高設為 1 */
+      }
+      
+      /* 新增：讓例句欄位可以換行並顯示完整內容 */
+      .vocabulary-table td:nth-child(5) { /* 例句 */
+        white-space: normal !important; /* 允許換行 */
+        overflow: visible !important; /* 顯示溢出內容（雖然換行後應該不會溢出） */
+        text-overflow: clip !important; /* 不顯示省略號 */
+        max-height: none !important; /* 移除最大高度限制 */
+      }
+      
+      /* 新增：翻譯欄位也允許換行 */
+      .vocabulary-table td:nth-child(6) { /* 翻譯 */
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        max-height: none !important;
+      }
+      
+      /* 表格寬度控制 */
+      .vocabulary-table {
+        width: 100% !important;
+        max-width: 20cm !important;
+        table-layout: fixed !important; /* 固定表格布局以控制列寬 */
+      }
+    }
+    
+    /* 單獨為表格模式設定列印尺寸 */
+    @page {
+      margin: 0.5cm;
+      size: portrait; /* 預設直向列印 */
+    }
+    
+    @page table {
+      size: portrait; /* 確保表格模式也是直向 */
+    }
+    
+    /* 根據不同模式設定頁面方向 */
+    html.card-mode-print, body.card-mode-print {
+      width: 100%;
+    }
+    
+    html.table-mode-print, body.table-mode-print {
+      width: 100%;
+    }
+    
+    body.table-mode-print {
+      page: table; /* 使用表格頁面設定 */
+    }
+
+    /* 響應式設計 */
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .vocabulary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+    }
+
+    /* 在 CSS 中加入提示文字的樣式 */
+    .print-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+
+    .print-hint {
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* 固定頂部控制區域 */
+    .fixed-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(60, 69, 82, 0.5); /* 修改：增加背景不透明度 */
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      padding: 1rem;
+      backdrop-filter: blur(1px); /* 修改：增加模糊效果 */
+      -webkit-backdrop-filter: blur(1px);
+    }
+
+    .fixed-header h1 {
+      margin: 0 0 1rem 0; /* 修改：增加底部間距 */
+      font-size: 1.4rem; /* 修改：增加字體大小 */
+      color: #fff;
+      text-align: center; /* 新增：標題置中 */
+    }
+
+    .fixed-header .controls {
+      margin-bottom: 0.5rem;
+    }
+
+    /* 調整固定頂部內的提示文字顏色 */
+    .fixed-header .print-hint {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+      text-align: center;
+      margin: 0.5rem 0;
+      max-width: 100%; /* 新增：限制最大寬度 */
+      margin: 0.5rem auto; /* 新增：水平置中 */
+    }
+
+    /* 調整固定頂部內的按鈕樣式 */
+    .fixed-header .btn {
+      background-color: rgba(255, 255, 255, 0.15); /* 半透明白色背景 */
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .fixed-header .btn:hover {
+      background-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .fixed-header .btn-primary {
+      background-color: var(--primary-color);
+      border: none;
+    }
+
+    .fixed-header .btn-secondary {
+      background-color: var(--secondary-color);
+      border: none;
+    }
+
+    /* 為內容區域添加上方間距 */
+    .content-wrapper {
+      padding-top: 180px; /* 修改：增加頂部間距，確保內容不被固定頂部遮擋 */
+    }
+
+    /* 列印時隱藏固定頂部 */
+    @media print {
+      .fixed-header {
+        display: none !important;
+      }
+      
+      .content-wrapper {
+        padding-top: 0 !important;
+      }
+    }
+
+    /* Switch Toggle 樣式 */
+    .switch-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 25px;
+      padding: 4px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      min-width: 240px;
+      justify-content: space-between;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    .switch-option {
+      position: relative;
+      padding: 8px 24px;
+      border-radius: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      transition: all 0.3s ease;
+      font-size: 0.8rem;
+      z-index: 1;
+      user-select: none;
+      flex: 0 1 50%;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 0 2px;
+    }
+
+    .switch-option.active {
+      color: #fff;
+    }
+
+    .switch-toggle::before {
+      content: '';
+      position: absolute;
+      width: calc(50% - 6px);
+      height: calc(100% - 8px);
+      background: var(--secondary-color);
+      border-radius: 20px;
+      transition: transform 0.3s ease;
+      left: 4px;
+      top: 4px;
+    }
+
+    .switch-toggle.table-active::before {
+      transform: translateX(calc(100% + 2px));
+      background: var(--secondary-color);
+    }
+
+    /* 調整列印按鈕樣式 */
+    .btn-print {
+      margin-top: 1rem; /* 新增：增加頂部間距 */
+      padding: 10px 32px; /* 修改：增加水平內邊距 */
+      font-size: 1rem;
+      border-radius: 25px; /* 修改：增加圓角 */
+      background: linear-gradient(45deg, #10b981, #059669);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-print:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      background: linear-gradient(45deg, #059669, #047857);
+    }
+
+    /* 調整提示文字樣式 */
+    .print-hint {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+      text-align: center;
+      margin: 0.5rem 0;
+      max-width: 80%; /* 新增：限制最大寬度 */
+      margin: 0.5rem auto; /* 新增：水平置中 */
+    }
+
+    /* 調整內容區域的上方間距 */
+    .content-wrapper {
+      padding-top: 180px; /* 修改：增加頂部間距，確保內容不被固定頂部遮擋 */
+    }
+
+    .highlight {
+      position: relative;
+      display: inline-block; /* 使得 ::after 可以正確定位 */
+      text-decoration: underline;
+    }
+
+    .highlight::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0; /* 在文字底部 */
+      height: 100%; /* 與文字高度相同 */
+      width: 100%; /* 初始寬度 */
+      background-color: rgba(255, 255, 0, 0.5); /* 黃色螢光筆顏色 */
+      transform: scaleX(0); /* 初始狀態為隱藏 */
+      transform-origin: left; /* 從左側開始動畫 */
+      transition: transform 0.3s ease; /* 動畫過渡效果 */
+    }
+
+    .highlight:hover::after {
+      transform: scaleX(1); /* 懸停時顯示 */
+    }
+
+
+
+    /* 按鈕組樣式 */
+    .button-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    
+
+  </style>
+</head>
+<body>
+  <!-- 固定頂部區域 -->
+  <div class="fixed-header">
+    <h1><i class="fas fa-book"></i> 字彙列印</h1>
+    <div class="controls">
+      <div class="print-section">
+        <div class="switch-toggle">
+          <div class="switch-option active" id="card-mode-btn"><i class="fas fa-id-card"></i> 卡片</div>
+          <div class="switch-option" id="table-mode-btn"><i class="fas fa-table"></i> 表格</div>
+        </div>
+        <small class="print-hint">提示：若要儲存為 PDF，請在列印視窗中選擇「另存為 PDF」選項。</small>
+        <div class="button-group">
+          <button id="print-btn" class="btn btn-print"><i class="fas fa-print"></i> 預覽列印</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 內容區域 -->
+  <div class="content-wrapper">
+    <div id="loading" style="display: none;"><i class="fas fa-spinner fa-pulse"></i> 載入中...</div>
+    <div id="content-area">
+      <!-- 內容將由 JavaScript 動態生成 -->
+    </div>
+  </div>
+
+  <!-- 載入必要的腳本 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script>
+    // 全域變數
+    let vocabularyData = [];
+    let currentMode = 'card'; // 預設模式：card 或 table
+    
+    // DOM 元素引用
+    const printBtn = document.getElementById('print-btn');
+    const cardModeBtn = document.getElementById('card-mode-btn');
+    const tableModeBtn = document.getElementById('table-mode-btn');
+    const contentArea = document.getElementById('content-area');
+    const loading = document.getElementById('loading');
+    
+    // 頁面載入
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化事件監聽
+      setupEventListeners();
+      
+      // 初始化 QuickNav
+      QuickNav.init({
+        position: 'top-left',
+        theme: 'light'
+      });
+      
+      // 初始設定頁面方向
+      document.documentElement.classList.add('card-mode-print');
+      document.body.classList.add('card-mode-print');
+      
+      // 檢查 URL 參數
+      const urlParams = new URLSearchParams(window.location.search);
+      const labelParam = urlParams.get('label');
+      
+      if (labelParam) {
+        loadVocabularyData(labelParam);
+      } else {
+        contentArea.innerHTML = '<div class="error-message">請提供標籤參數 (label)</div>';
+      }
+    });
+    
+    // 設定事件監聽
+    function setupEventListeners() {
+      const switchToggle = document.querySelector('.switch-toggle');
+      const cardOption = document.getElementById('card-mode-btn');
+      const tableOption = document.getElementById('table-mode-btn');
+      
+      // 列印按鈕
+      printBtn.addEventListener('click', function() {
+        window.print();
+      });
+      
+      // 模式切換
+      cardOption.addEventListener('click', function() {
+        if (currentMode === 'card') return;
+        currentMode = 'card';
+        switchToggle.classList.remove('table-active');
+        cardOption.classList.add('active');
+        tableOption.classList.remove('active');
+        document.documentElement.classList.remove('table-mode-print');
+        document.documentElement.classList.add('card-mode-print');
+        document.body.classList.remove('table-mode-print');
+        document.body.classList.add('card-mode-print');
+        renderVocabularyData();
+      });
+      
+      tableOption.addEventListener('click', function() {
+        if (currentMode === 'table') return;
+        currentMode = 'table';
+        switchToggle.classList.add('table-active');
+        cardOption.classList.remove('active');
+        tableOption.classList.add('active');
+        document.documentElement.classList.remove('card-mode-print');
+        document.documentElement.classList.add('table-mode-print');
+        document.body.classList.remove('card-mode-print');
+        document.body.classList.add('table-mode-print');
+        renderVocabularyData();
+      });
+    }
+    
+    // 載入字彙資料
+    async function loadVocabularyData(label) {
+      showLoading(true);
+      
+      try {
+        // Google Sheets ID 和工作表 ID
+        const spreadsheetId = "1wSHAL3piJGEJ8EnoyK_W9kkvL42GQYId35UEhMzHTZY";
+        const gid = "0";
+        const spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
+        
+        // 獲取 CSV 資料
+        const response = await fetch(spreadsheetUrl);
+        if (!response.ok) {
+          throw new Error("無法載入試算表資料");
+        }
+        
+        const csvText = await response.text();
+        if (!csvText.trim()) {
+          throw new Error("試算表內容為空");
+        }
+        
+        // 解析 CSV
+        const { data } = Papa.parse(csvText, { header: false });
+        if (!data || data.length === 0) {
+          throw new Error("解析後的資料為空");
+        }
+        
+        // 取表頭
+        const header = data.shift();
+        if (!header) {
+          throw new Error("無法提取表頭，資料格式可能有誤");
+        }
+        
+        // 過濾資料：只保留第一欄 (Label) 符合的
+        const filteredData = data.filter(row => row[0]?.toLowerCase() === label.toLowerCase());
+        if (filteredData.length === 0) {
+          throw new Error(`找不到標籤為 "${label}" 的資料`);
+        }
+        
+        // 去除每行的第一欄 (Label)
+        const processedHeader = header.slice(1);
+        const processedData = filteredData.map(row => row.slice(1));
+        
+        // 組合最終資料
+        vocabularyData = [processedHeader, ...processedData];
+                
+        // 渲染資料
+        renderVocabularyData();
+      } catch (error) {
+        console.error("載入資料失敗:", error);
+        contentArea.innerHTML = `<div class="error-message">載入資料失敗：${error.message}</div>`;
+      }
+      
+      showLoading(false);
+    }
+    
+    // 渲染字彙資料
+    function renderVocabularyData() {
+      if (!vocabularyData || vocabularyData.length <= 1) {
+        contentArea.innerHTML = '<div class="error-message">尚未載入資料或資料為空</div>';
+        return;
+      }
+      
+      if (currentMode === 'card') {
+        renderCardMode();
+      } else {
+        renderTableMode();
+      }
+    }
+    
+    // 渲染字卡模式
+    function renderCardMode() {
+      const header = vocabularyData[0];
+      const data = vocabularyData.slice(1);
+      
+      let html = '<div class="vocabulary-grid">';
+      
+      data.forEach((row, index) => {
+        if (!row[0]) return; // 跳過空行
+        
+        // 解構資料 [英文, KK音標, 中譯, 例句, 翻譯, 相關影片, mark_start, mark_end]
+        const [english, pronunciation, translation, example, exampleTranslation, videoRelated, markStart, markEnd] = row.map(item => item || '');
+        
+        // 處理例句標記
+        let markedExample = example;
+        if (example && markStart && markEnd) {
+          const words = example.split(' ');
+          const start = parseInt(markStart) - 1;
+          const end = parseInt(markEnd) - 1;
+          
+          if (!isNaN(start) && !isNaN(end) && start >= 0 && end < words.length) {
+            words[start] = `<span class="highlight">${words[start]}`;
+            words[end] = `${words[end]}</span>`;
+            markedExample = words.join(' ');
+          }
+        }
+        
+        html += `
+          <div class="vocabulary-card" id="card-${index}">
+            <h3>${english}</h3>
+            <div class="vocabulary-item"><strong>音標：</strong>${pronunciation}</div>
+            <div class="vocabulary-item"><strong>中譯：</strong>${translation}</div>
+            ${example ? `
+              <div class="example">
+                <div>${markedExample}</div>
+                <div>${exampleTranslation}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+              contentArea.innerHTML = html;
+    }
+    
+
+    
+    // 渲染表格模式
+    function renderTableMode() {
+      const header = vocabularyData[0];
+      const data = vocabularyData.slice(1).filter(row => row[0]); // 過濾空行
+      
+      const itemsPerPage = 20; // 每頁顯示的單字數量
+      const totalPages = Math.ceil(data.length / itemsPerPage);
+      
+      let html = '';
+      
+      // 為每一頁創建表格
+      for (let page = 0; page < totalPages; page++) {
+        const startIndex = page * itemsPerPage;
+        
+        // 計算這一頁顯示的單字數量
+        let endIndex = Math.min(startIndex + itemsPerPage, data.length);
+        const pageItems = data.slice(startIndex, endIndex);
+        const itemsOnThisPage = pageItems.length;
+        
+        // 每頁使用獨立的分頁容器
+        html += `<div class="vocabulary-table-page">`;
+        
+        // 添加標題
+        html += `<h1 style="text-align: center; margin-bottom: 0.5cm; font-size: 1.2rem;">vocabulary</h1>`;
+        
+        // 添加頁碼
+        html += `<div style="text-align: right; font-size: 0.7rem; color: #666; margin-bottom: 0.1cm;">${page+1}/${totalPages}</div>`;
+        
+        // 添加水平滾動容器
+        html += '<div class="vocabulary-table-container">';
+        html += '<table class="vocabulary-table">';
+        
+        // 表頭
+        html += '<thead><tr>';
+        html += '<th>序號</th>';
+        html += '<th>英文</th>';
+        html += '<th>音標</th>';
+        html += '<th>中譯</th>';
+        html += '<th>例句</th>';
+        html += '<th>翻譯</th>';
+        html += '</tr></thead>';
+        
+        // 表身
+        html += '<tbody>';
+        
+        // 只生成實際有資料的行
+        for (let i = 0; i < itemsOnThisPage; i++) {
+          const row = pageItems[i];
+          const rowNumber = startIndex + i + 1;
+          
+          // 解構資料 [英文, KK音標, 中譯, 例句, 翻譯, 相關影片, mark_start, mark_end]
+          const [english, pronunciation, translation, example, exampleTranslation, videoRelated, markStart, markEnd] = row.map(item => item || '');
+          
+          // 處理例句標記
+          let markedExample = example;
+          if (example && markStart && markEnd) {
+            const words = example.split(' ');
+            const start = parseInt(markStart) - 1; // 轉換為 0-based 索引
+            const end = parseInt(markEnd) - 1;
+            
+            if (!isNaN(start) && !isNaN(end) && start >= 0 && end < words.length) {
+              // 將標記的單字包裹在 <span> 中，並添加 highlight 類別
+              words[start] = `<span class="highlight">${words[start]}`; // 開始標記
+              words[end] = `${words[end]}</span>`; // 結束標記
+              markedExample = words.join(' ');
+            }
+          }
+          
+          html += '<tr>';
+          html += `<td>${rowNumber}</td>`;
+          html += `<td title="${english}">${english}</td>`;
+          html += `<td title="${pronunciation}">${pronunciation}</td>`;
+          html += `<td>${translation}</td>`;
+          html += `<td title="${example}">${markedExample}</td>`;
+          html += `<td>${exampleTranslation}</td>`;
+          html += '</tr>';
+        }
+        
+        html += '</tbody>';
+        html += '</table>';
+        html += '</div>'; // 結束水平滾動容器
+        html += '</div>'; // 結束 vocabulary-table-page
+      }
+      
+      contentArea.innerHTML = html;
+    }
+    
+    // 顯示/隱藏載入動畫
+    function showLoading(isLoading) {
+      loading.style.display = isLoading ? 'block' : 'none';
+    }
+  </script>
+</body>
+</html> 

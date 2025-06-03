@@ -1,0 +1,4034 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VocabExport｜開發管理介面</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      /* Light Theme (Default) */
+      --primary-color: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #818cf8;
+      --danger-color: #ef4444;
+      --danger-dark: #dc2626;
+      --danger-light: #f87171;
+      --text-light: #f8fafc; /* Text for dark backgrounds */
+      --text-dark: #1e293b;  /* Text for light backgrounds */
+      --text-primary: #334155;
+      --text-secondary: #64748b;
+      --bg-primary: #f1f5f9;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 12px;
+      --spacing-lg: 16px;
+      --spacing-xl: 24px;
+      --spacing-2xl: 32px;
+      --border-radius-sm: 4px;
+      --border-radius-md: 6px;
+      --border-radius-lg: 8px;
+      --border-radius-xl: 20px;
+      --border-radius-full: 9999px;
+      --font-size-xs: 0.75rem;
+      --font-size-sm: 0.875rem;
+      --font-size-base: 1rem;
+      --font-size-lg: 1.125rem;
+      --font-size-xl: 1.25rem;
+      --font-size-2xl: 1.5rem;
+      --transition-fast: all 0.2s ease-in-out;
+      --transition: all 0.3s ease;
+      --sidebar-width: 260px;
+
+      /* New variables for specific component backgrounds that might need different alpha values or base colors per theme */
+      --bg-controls-sticky: rgba(255, 255, 255, 0.95);
+      --bg-preview-controls: rgba(30, 41, 59, 0.8); /* Default for preview controls, assuming it's often on a darker page or modal */
+      --text-on-preview-controls: #f8fafc; /* Static light text for preview controls */
+      --border-preview-controls: rgba(255,255,255,0.1);
+      --bg-fixed-download-container: rgba(240, 240, 240, 0.85); /* Lighter, less obtrusive for light theme */
+      --text-on-primary: var(--text-light); /* Text on primary-colored elements */
+      --highlight-bg: rgba(14, 165, 233, 0.2);
+      --highlight-text: #38bdf8;
+      --highlight-shadow: rgba(56, 189, 248, 0.4);
+      --highlight-box-shadow: rgba(56, 189, 248, 0.3);
+    }
+
+    .vocab-export-app.dark-theme {
+      --primary-color: #818cf8;
+      --primary-dark: #6366f1;
+      --primary-light: #a7aefc;
+      --danger-color: #f87171;
+      --danger-dark: #ef4444;
+      --danger-light: #fca5a5;
+      --text-light: #0f172a;    /* Text for light backgrounds in dark mode */
+      --text-dark: #f8fafc;     /* Text for dark backgrounds in dark mode */
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --bg-primary: #0f172a;
+      --bg-card: #1e293b;
+      --border-color: #334155;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.25);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+
+      --bg-controls-sticky: rgba(15, 23, 42, 0.9); /* Darker sticky controls bg */
+      --bg-preview-controls: rgba(15, 23, 42, 0.85); /* Darker preview controls to match theme */
+      /* --text-on-preview-controls remains #f8fafc */
+      --border-preview-controls: rgba(100, 116, 139, 0.3);
+      --bg-fixed-download-container: rgba(30, 41, 59, 0.85); /* Darker fixed download container */
+      --text-on-primary: #0f172a; /* Dark text on (now lighter) primary buttons */
+      --highlight-bg: rgba(56, 189, 248, 0.3); /* Slightly brighter highlight for dark mode */
+      --highlight-text: #7dd3fc;
+      --highlight-shadow: rgba(96, 165, 250, 0.5);
+      --highlight-box-shadow: rgba(96, 165, 250, 0.4);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-size: 16px !important;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    h2 {
+      font-size: 1.5rem !important;
+    }
+    
+    /* 根容器基本樣式，確保與外部隔離 */
+    .vocab-export-app {
+      font-family: 'Noto Sans TC', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Left Sidebar Styles */
+    .vocab-export-app .sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-card);
+      box-shadow: var(--shadow-md);
+      padding: var(--spacing-lg);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid var(--border-color);
+      z-index: 10;
+      display: flex; /* Added for theme switcher alignment */
+      flex-direction: column; /* Added for theme switcher alignment */
+    }
+
+    .vocab-export-app .sidebar-header {
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-lg);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .vocab-export-app .sidebar-header h1 {
+      font-size: var(--font-size-xl);
+      color: var(--primary-color);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-weight: 700; /* Bold title */
+    }
+
+    .vocab-export-app .nav-menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-grow: 1; /* Allow nav to grow, pushing switcher down */
+    }
+
+    .vocab-export-app .nav-item {
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .vocab-export-app .nav-link {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md) var(--spacing-lg);
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: var(--border-radius-md); /* Slightly smaller radius */
+      transition: var(--transition-fast);
+      font-weight: 500;
+    }
+
+    .vocab-export-app .nav-link:hover {
+      background: rgba(99, 102, 241, 0.08); /* Subtle hover */
+      color: var(--primary-dark);
+    }
+
+    .vocab-export-app .nav-link.active {
+      background: var(--primary-color);
+      color: var(--text-light);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .vocab-export-app .nav-link.active:hover {
+       background: var(--primary-dark);
+    }
+
+    .vocab-export-app .nav-link i {
+      width: 20px;
+      text-align: center;
+      font-size: var(--font-size-base); /* Match text size */
+    }
+
+    /* Main Content Area Styles */
+    .vocab-export-app .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: var(--spacing-2xl); /* More padding */
+      min-height: 100vh;
+    }
+
+    /* Content Section Switching */
+    .vocab-export-app .content-section {
+      display: none;
+      animation: fadeIn 0.5s ease forwards; /* Fade-in animation */
+    }
+
+    .vocab-export-app .content-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .vocab-export-app .container {
+      max-width: 1200px; /* Added max-width for larger screens */
+      width: 100%;
+      margin: 0 auto; /* Center container */
+      padding: 0;
+    }
+
+    /* General Header Styles */
+    .vocab-export-app .header {
+      text-align: center;
+      margin-bottom: var(--spacing-2xl); /* Increased spacing */
+    }
+
+    .vocab-export-app .header h1 {
+      font-size: var(--font-size-2xl); /* Larger title */
+      color: var(--primary-dark); /* Darker color */
+      margin-bottom: var(--spacing-sm); /* Reduced spacing */
+      display: flex;
+      align-items: center;
+      justify-content: center; /* Center icon and text */
+      gap: var(--spacing-md);
+      font-weight: 700;
+    }
+
+    .vocab-export-app .header p {
+      color: var(--text-secondary);
+      font-size: var(--font-size-base);
+      margin-bottom: var(--spacing-xl);
+      max-width: 600px; /* Limit description width */
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Usage Steps Styles */
+    .vocab-export-app .usage-steps {
+      background: var(--bg-card);
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      border: 1px solid var(--border-color);
+    }
+
+    /* 進一步提高特異性，避免 WordPress 樣式衝突 */
+    .vocab-export-app .content-section .usage-steps .usage-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .vocab-export-app .content-section .usage-steps .usage-toggle .fas.fa-chevron-down {
+      margin-left: 0.5rem;
+      transition-property: transform;
+      transition-duration: 300ms;
+    }
+
+    /* 如果您有箭頭旋轉的動畫效果，也可以添加以下樣式 */
+    .vocab-export-app .usage-toggle.open .fas.fa-chevron-down {
+      transform: rotate(180deg);
+    }
+
+    .vocab-export-app .steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .vocab-export-app .step {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+    }
+
+    .vocab-export-app .step-number {
+      background: var(--primary-light);
+      color: var(--text-light); /* MODIFIED: Changed from --primary-dark to --text-light for better contrast */
+      width: 28px; /* Larger number circle */
+      height: 28px;
+      border-radius: var(--border-radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .vocab-export-app .step-content {
+      color: var(--text-primary); /* Darker text */
+      padding-top: 2px;
+    }
+
+    /* Unified Button Styles */
+    .vocab-export-app .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md) var(--spacing-lg); /* Adjusted padding */
+      font-size: var(--font-size-base);
+      font-weight: 500;
+      border-radius: var(--border-radius-md);
+      border: 1px solid transparent; /* Base border */
+      cursor: pointer;
+      transition: var(--transition-fast);
+      text-decoration: none;
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap; /* Prevent wrapping */
+    }
+
+    .vocab-export-app .btn i {
+      font-size: 1.1em; /* Slightly larger icons */
+    }
+
+    .vocab-export-app .btn:focus-visible {
+        outline: 2px solid var(--primary-light);
+        outline-offset: 2px;
+    }
+
+    .vocab-export-app .btn-primary {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: var(--text-light);
+    }
+
+    .vocab-export-app .btn-primary:hover {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .vocab-export-app .btn-accent {
+      background: #20c997; /* 青色 */
+      border-color: #20c997;
+      color: var(--text-light);
+    }
+
+    .vocab-export-app .btn-accent:hover {
+      background: #1baa80; /* 較深的青色 */
+      border-color: #1baa80;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .vocab-export-app .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .vocab-export-app .btn-secondary:hover {
+      background: var(--bg-primary);
+      border-color: #cbd5e1; /* Slightly darker border on hover */
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .vocab-export-app .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        background: var(--text-secondary) !important; /* Ensure disabled style overrides */
+        border-color: var(--text-secondary) !important;
+    }
+
+    /* Unified Input Styles */
+    .vocab-export-app .input, 
+    .vocab-export-app .label-input, 
+    .vocab-export-app .bulk-input, 
+    .vocab-export-app .word-input {
+      width: 100%;
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-size: var(--font-size-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-md);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      transition: var(--transition-fast);
+      outline: none;
+    }
+
+    .vocab-export-app .input:focus, 
+    .vocab-export-app .label-input:focus, 
+    .vocab-export-app .bulk-input:focus, 
+    .vocab-export-app .word-input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .vocab-export-app .input::placeholder, 
+    .vocab-export-app .label-input::placeholder, 
+    .vocab-export-app .bulk-input::placeholder, 
+    .vocab-export-app .word-input::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.8;
+    }
+
+    /* Unified Card Styles */
+    .vocab-export-app .card {
+      background: var(--bg-card);
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: var(--spacing-lg);
+      transition: var(--transition-fast);
+      border: 1px solid var(--border-color);
+    }
+
+    .vocab-export-app .card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    /* Specific Element Adjustments */
+    .vocab-export-app .label-input-container {
+      display: flex;
+      gap: var(--spacing-md); /* Reduced gap */
+      margin-bottom: var(--spacing-xl);
+      align-items: center;
+    }
+
+    .vocab-export-app .label-input {
+      flex-grow: 1; /* Allow input to grow */
+    }
+
+    /* Loading Indicator */
+    .vocab-export-app #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8); /* Lighter background */
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1999;
+    }
+
+    .vocab-export-app .loading-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-lg);
+      color: var(--text-dark); /* Dark text */
+      font-size: var(--font-size-lg);
+      font-weight: 500;
+      background-color: var(--bg-card);
+      padding: var(--spacing-xl) var(--spacing-2xl);
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .vocab-export-app .loading-content i {
+      color: var(--primary-color);
+      font-size: 2rem;
+    }
+
+    /* Word Wall Generation Styles (kept for html2canvas) */
+    .vocab-export-app .word-wall-container {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      display: grid;
+      padding: 40px;
+      box-sizing: border-box;
+      place-items: center;
+      gap: 10px;
+      transition: background 0.3s ease;
+    }
+    
+    .vocab-export-app .word-wall-word {
+      /* Styles for generated image - mostly kept as is */
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      padding: 15px 20px;
+      border-radius: var(--border-radius-md);
+      font-weight: 600;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      min-height: 60px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      letter-spacing: 0.5px;
+      display: flex; /* Added for better vertical alignment if needed */
+      flex-direction: column; /* Added for better vertical alignment if needed */
+      justify-content: center; /* Added for better vertical alignment if needed */
+    }
+    
+    .vocab-export-app .word-wall-title {
+      position: absolute;
+      top: 30px; /* Increased spacing */
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #ffffff;
+      font-size: 32px; /* Larger title */
+      font-weight: bold;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Stronger shadow */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-md);
+    }
+    
+    .vocab-export-app .word-wall-footer {
+      position: absolute;
+      bottom: 30px; /* Increased spacing */
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.6); /* Slightly more visible */
+      font-size: 18px; /* Larger footer */
+    }
+
+    .vocab-export-app .wall-word-en {
+      display: block;
+      font-weight: 600;
+      width: 100%;
+    }
+
+    .vocab-export-app .wall-word-cn {
+      display: block;
+      opacity: 0.85;
+      margin-top: var(--spacing-xs); /* Small gap */
+      width: 100%;
+      white-space: normal;
+      line-height: 1.3; /* Slightly tighter */
+      font-weight: normal;
+      font-size: 0.8em; /* Relative size */
+    }
+
+    /* Word Wall Modal Styles */
+    .vocab-export-app .word-wall-modal {
+      position: fixed;
+      inset: 0; /* Replaces top, left, right, bottom */
+      background-color: rgba(0, 0, 0, 0.85);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-lg);
+      overflow: auto;
+      animation: fadeIn 0.3s ease forwards;
+    }
+    
+    .vocab-export-app .word-wall-modal-content {
+      max-width: 90%;
+      max-height: 90vh; /* Use viewport height */
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-lg);
+      background-color: var(--bg-card); /* Add background for better visibility */
+      padding: var(--spacing-lg);
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .vocab-export-app .word-wall-preview {
+      max-width: 100%;
+      max-height: calc(80vh - 100px); /* Adjust based on controls height */
+      object-fit: contain;
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--border-color); /* Add subtle border */
+    }
+    
+    .vocab-export-app .word-wall-modal-controls {
+      display: flex;
+      gap: var(--spacing-md);
+      justify-content: center;
+      padding-top: var(--spacing-lg);
+      border-top: 1px solid var(--border-color); /* Separator line */
+    }
+
+    .vocab-export-app .btn-download {
+      /* Inherits .btn styles, adjust specifics */
+      padding: var(--spacing-md) var(--spacing-xl);
+      font-size: var(--font-size-base); /* Standardize size */
+      border-radius: var(--border-radius-md);
+      background: var(--primary-color);
+      color: var(--text-light);
+    }
+
+    .vocab-export-app .btn-download:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .vocab-export-app .btn-close {
+      /* Inherits .btn styles, adjust specifics */
+       padding: var(--spacing-md) var(--spacing-lg);
+       border-radius: var(--border-radius-md);
+       background: var(--bg-card);
+       color: var(--text-primary);
+       border: 1px solid var(--border-color);
+    }
+
+    .vocab-export-app .btn-close:hover {
+       background: var(--bg-primary);
+       border-color: #cbd5e1;
+       transform: translateY(-1px);
+       box-shadow: var(--shadow-sm);
+    }
+
+    /* Theme Selector Styles */
+    .vocab-export-app .theme-selector {
+      background: var(--bg-card);
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-md);
+      margin-top: var(--spacing-xl);
+      margin-bottom: var(--spacing-xl);
+      border: 1px solid var(--border-color);
+      overflow: hidden; /* Contain children */
+    }
+
+    .vocab-export-app .theme-selector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: var(--spacing-lg); /* Consistent padding */
+    }
+
+    .vocab-export-app .theme-selector-header h2 {
+      color: var(--primary-dark);
+      margin: 0;
+      font-size: var(--font-size-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-weight: 700;
+    }
+
+    .vocab-export-app .theme-selector-header i.fa-chevron-down { /* Target chevron specifically */
+      transition: transform var(--transition-fast);
+      color: var(--text-secondary);
+    }
+
+    .vocab-export-app .theme-selector-header.collapsed i.fa-chevron-down {
+      transform: rotate(-90deg);
+    }
+
+    .vocab-export-app .themes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Slightly smaller minmax */
+      gap: var(--spacing-lg);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, padding 0.4s ease; /* Smooth transition */
+      padding: 0 var(--spacing-lg); /* Add horizontal padding */
+    }
+
+    .vocab-export-app .themes.expanded {
+      max-height: 500px; /* Adjust as needed */
+      padding: var(--spacing-lg); /* Apply padding when expanded */
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-light) var(--bg-primary);
+    }
+
+    /* Custom Scrollbar */
+    .vocab-export-app .themes.expanded::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .vocab-export-app .themes.expanded::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+      border-radius: 4px;
+    }
+
+    .themes.expanded::-webkit-scrollbar-thumb {
+      background-color: var(--primary-light);
+      border-radius: 4px;
+    }
+     .themes.expanded::-webkit-scrollbar-thumb:hover {
+      background-color: var(--primary-color);
+    }
+
+    /* Theme Option Styles */
+    .theme-option {
+      background: var(--bg-card);
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      padding: var(--spacing-sm);
+      border: 2px solid transparent;
+      transition: var(--transition-fast);
+      text-align: center;
+    }
+
+    .theme-option:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-light);
+    }
+
+    .theme-option.selected {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3), var(--shadow-sm);
+    }
+    
+    .theme-preview {
+      width: 100%;
+      height: 60px;
+      border-radius: var(--border-radius-sm);
+      margin-bottom: var(--spacing-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .theme-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: var(--font-size-sm);
+    }
+
+    /* Theme Color Previews */
+    .theme-nature { background: linear-gradient(135deg, #a8e6cf, #dcedc1); }
+    .theme-ocean { background: linear-gradient(135deg, #a8d8ea, #aa96da); }
+    .theme-candy { background: linear-gradient(135deg, #ffd3b6, #ffaaa5); }
+    .theme-tech { background: linear-gradient(135deg, #d4e6f1, #a9cce3); }
+    .theme-rainbow { background: linear-gradient(135deg, #ff9a9e, #fad0c4, #a1c4fd, #c2e9fb); }
+    .theme-classic { background: linear-gradient(135deg, #0f172a, #1e293b); }
+
+    /* Input Mode Switch Styles */
+    .input-mode-switch {
+      display: flex;
+      justify-content: center;
+      margin-bottom: var(--spacing-xl);
+      gap: var(--spacing-md);
+    }
+
+    .mode-btn {
+      padding: var(--spacing-sm) var(--spacing-lg); /* Adjusted padding */
+      border: 1px solid var(--primary-color);
+      border-radius: var(--border-radius-full); /* Pill shape */
+      background: var(--bg-card);
+      color: var(--primary-color);
+      font-size: var(--font-size-sm); /* Smaller font */
+      cursor: pointer;
+      transition: var(--transition-fast);
+      font-weight: 500;
+    }
+
+    .mode-btn.active {
+      background: var(--primary-color);
+      color: var(--text-light);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mode-btn:hover:not(.active) {
+      background: rgba(99, 102, 241, 0.08);
+      border-color: var(--primary-dark);
+    }
+
+    /* Manual Input Section */
+    .manual-input-container {
+      display: none; /* Handled by JS */
+      margin-bottom: var(--spacing-xl);
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .manual-input-container.active {
+      display: block;
+    }
+
+    .bulk-input-container {
+      display: flex;
+      gap: var(--spacing-xl); /* Increased gap */
+      margin-bottom: var(--spacing-lg); /* Reduced bottom margin */
+    }
+
+    .bulk-input-column {
+      flex: 1;
+    }
+
+    .bulk-input-label {
+      display: block;
+      margin-bottom: var(--spacing-sm);
+      color: var(--primary-dark); /* Darker label */
+      font-weight: 500;
+      font-size: var(--font-size-sm);
+    }
+
+    .bulk-input {
+      height: 180px; /* Slightly smaller */
+      line-height: 1.5;
+      resize: vertical;
+      border-color: var(--border-color); /* Use standard border color */
+    }
+
+    .vocab-export-app .input-hint {
+      margin-top: var(--spacing-sm);
+      font-size: var(--font-size-xs); /* Smaller hint */
+      color: var(--text-secondary);
+    }
+
+    /* Vocabulary Card Section Styles */
+    .vocab-export-app .vocabulary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--spacing-xl); /* Increased gap */
+    }
+
+    .vocab-export-app .vocabulary-card {
+      /* Inherits .card styles, add specifics */
+      padding: var(--spacing-lg);
+      break-inside: avoid; /* Better for printing/layout */
+    }
+
+    .vocab-export-app .vocabulary-card h3 {
+      margin-top: 0;
+      margin-bottom: var(--spacing-md); /* Increased spacing */
+      color: var(--primary-dark);
+      font-size: var(--font-size-lg);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: var(--spacing-sm);
+      font-weight: 700;
+    }
+
+    .vocab-export-app .vocabulary-item {
+      margin-bottom: var(--spacing-sm);
+      font-size: var(--font-size-base);
+    }
+
+    .vocab-export-app .vocabulary-item strong {
+      color: var(--text-secondary); /* Softer color for label */
+      font-weight: 500;
+      margin-right: var(--spacing-xs);
+      display: inline-block; /* Allow margin */
+      width: 50px; /* Align labels */
+    }
+
+    .vocab-export-app .example {
+      font-style: normal; /* Remove italics for readability */
+      margin-top: var(--spacing-md);
+      padding: var(--spacing-md); /* Add padding */
+      padding-left: var(--spacing-lg);
+      border-left: 3px solid var(--primary-light); /* Thicker border */
+      background-color: var(--bg-primary); /* Subtle background */
+      border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+      font-size: var(--font-size-sm);
+    }
+
+    .vocab-export-app .example div:first-child {
+        margin-bottom: var(--spacing-xs);
+        color: var(--text-primary);
+    }
+     .vocab-export-app .example div:last-child {
+        color: var(--text-secondary);
+    }
+
+    .vocab-export-app .highlight {
+      position: relative;
+      display: inline-block;
+      text-decoration: none;
+      background-color: var(--highlight-bg);
+      color: var(--highlight-text);
+      padding: 0 8px;
+      border-radius: 6px;
+      font-weight: bold;
+      text-shadow: 0 0 8px var(--highlight-shadow);
+      box-shadow: 0 0 15px var(--highlight-box-shadow);
+      transition: all 0.3s ease;
+    }
+
+    .vocab-export-app .highlight:hover {
+      background-color: rgba(var(--highlight-text), 0.3); /* Adjusted for dynamic color */
+      box-shadow: 0 0 18px rgba(var(--highlight-shadow), 0.4); /* Adjusted for dynamic color */
+    }
+
+    /* Preview Layer Styles (for Card Download) */
+    .vocab-export-app .preview-layer,
+    .preview-layer {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start; /* Align to top */
+      padding: var(--spacing-lg);
+      overflow: auto;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .preview-controls {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      max-width: 1400px; /* Limit width */
+      background-color: var(--bg-preview-controls);
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--border-radius-md);
+      margin-bottom: var(--spacing-xl);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1;
+      backdrop-filter: blur(5px);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-preview-controls);
+      color: var(--text-on-preview-controls);
+    }
+
+     .preview-controls .status-text {
+        flex-grow: 1;
+        margin: 0 var(--spacing-lg);
+        font-size: var(--font-size-sm);
+        text-align: left;
+     }
+
+     .preview-controls .btn-group {
+        display: flex;
+        gap: var(--spacing-md);
+    }
+
+    .preview-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Smaller minmax */
+      gap: var(--spacing-lg); /* Consistent gap */
+      width: 100%;
+      max-width: 1400px; /* Limit width */
+      padding: 0; /* Remove extra padding */
+    }
+
+    .preview-card {
+      position: relative;
+      background: var(--bg-card);
+      border-radius: var(--border-radius-md); /* Consistent radius */
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      transition: var(--transition-fast);
+      border: 1px solid var(--border-color);
+    }
+
+    .preview-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-3px); /* Slightly more lift */
+    }
+
+    .preview-card img { /* Style the image within */
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    .preview-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent); /* Gradient overlay */
+      color: var(--text-light);
+      padding: var(--spacing-lg) var(--spacing-md); /* Adjust padding */
+      padding-top: var(--spacing-2xl); /* More padding top for gradient */
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end; /* Align items to bottom */
+      opacity: 0; /* Hide by default */
+      transition: opacity var(--transition-fast);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+    }
+
+    .preview-card:hover .preview-overlay {
+       opacity: 1; /* Show on hover */
+    }
+
+    .preview-download {
+      color: var(--text-light);
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: var(--border-radius-full);
+      width: 32px; /* Larger button */
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+      text-decoration: none;
+      flex-shrink: 0; /* Prevent shrinking */
+    }
+
+    .preview-download:hover {
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(1.1);
+    }
+
+    .preview-download i {
+        font-size: var(--font-size-base);
+    }
+
+    /* Small Button Variant */
+    .btn-sm {
+      padding: var(--spacing-xs) var(--spacing-md);
+      font-size: var(--font-size-sm);
+      border-radius: var(--border-radius-sm);
+    }
+
+    /* Danger Button Variant */
+    .btn-danger {
+      background: var(--danger-color);
+      border-color: var(--danger-color);
+      color: var(--text-light);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-dark);
+      border-color: var(--danger-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Helper class for screen readers */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    /* Notification/Alert Area (Optional, for JS) */
+    .notification-area {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .vocab-export-app .notification {
+        background-color: var(--text-dark);
+        color: var(--text-light);
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--shadow-lg);
+        font-size: var(--font-size-sm);
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.5s ease;
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+
+    .vocab-export-app .notification.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+     .vocab-export-app .notification.error {
+        background-color: var(--danger-dark);
+     }
+     .vocab-export-app .notification.success {
+         background-color: #10b981; /* Green for success */
+     }
+     .vocab-export-app .notification i {
+        font-size: 1.2em;
+     }
+
+    /* Responsive Adjustments */
+    @media (max-width: 1024px) {
+      .vocab-export-app .bulk-input-container {
+        flex-direction: column;
+        gap: var(--spacing-lg);
+      }
+      .vocab-export-app .preview-container {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      }
+    }
+
+
+    @media (max-width: 768px) {
+      .vocab-export-app {
+        flex-direction: column;
+      }
+      .vocab-export-app .sidebar {
+        position: static; /* Change sidebar position */
+        width: 100%;
+        height: auto;
+        box-shadow: var(--shadow-sm);
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .vocab-export-app .main-content {
+        margin-left: 0;
+        padding: var(--spacing-xl); /* Adjust padding for mobile */
+      }
+      .vocab-export-app .nav-menu {
+        display: flex; /* Horizontal nav on mobile */
+        overflow-x: auto; /* Allow scrolling */
+      }
+      .vocab-export-app .nav-item {
+          margin-bottom: 0;
+          flex-shrink: 0; /* Prevent items from shrinking */
+      }
+       .vocab-export-app .nav-link {
+          padding: var(--spacing-md);
+          white-space: nowrap;
+       }
+      .vocab-export-app .themes {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); /* Smaller themes on mobile */
+        gap: var(--spacing-md);
+      }
+      .vocab-export-app .theme-preview {
+        height: 50px;
+      }
+      .vocab-export-app .label-input-container {
+          flex-direction: column;
+          align-items: stretch; /* Stretch items */
+      }
+       .vocab-export-app .container {
+          padding: 0 var(--spacing-md); /* Add horizontal padding on mobile */
+       }
+        .vocab-export-app .usage-steps {
+            padding: var(--spacing-lg);
+        }
+        .vocab-export-app .vocabulary-grid {
+             grid-template-columns: 1fr; /* Single column on small screens */
+             gap: var(--spacing-lg);
+        }
+         .vocab-export-app .preview-container {
+             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+         }
+          .vocab-export-app .preview-controls {
+              flex-direction: column;
+              gap: var(--spacing-md);
+              align-items: stretch;
+          }
+          .vocab-export-app .preview-controls .btn-group {
+              justify-content: center;
+          }
+           .vocab-export-app .preview-controls .status-text {
+               text-align: center;
+               margin-bottom: var(--spacing-sm);
+           }
+    }
+
+    /* 下載所有卡片按鈕的sticky效果 */
+    .vocab-export-app .controls {
+      position: sticky;
+      top: 20px;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      margin-bottom: var(--spacing-xl);
+      padding: 10px 0;
+      background-color: var(--bg-controls-sticky);
+      backdrop-filter: blur(5px);
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--shadow-md);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    /* 整合label-input-container到sticky控制區 */
+    .vocab-export-app .sticky-controls {
+      position: sticky !important;
+      top: 20px !important;
+      z-index: 10 !important;
+      padding: 15px;
+      margin-bottom: var(--spacing-xl);
+      background-color: var(--bg-controls-sticky);
+      backdrop-filter: blur(5px);
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--shadow-md);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .vocab-export-app .sticky-controls .label-input-container {
+      margin-bottom: 0;
+      width: 100%;
+    }
+
+    .vocab-export-app .sticky-controls .controls-buttons {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-md);
+    }
+
+    /* 新增：固定在底部的下載按鈕容器 */
+    .vocab-export-app .fixed-download-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 15px;
+      background-color: var(--bg-fixed-download-container);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      z-index: 100;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .vocab-export-app .fixed-download-container button {
+      font-size: var(--font-size-md);
+      padding: 10px 20px;
+    }
+
+    /* 確保在小屏幕上保持良好的顯示效果 */
+    @media (max-width: 768px) {
+       .vocab-export-app .controls {
+          padding: 8px 0;
+          top: 10px;
+       }
+       
+       .vocab-export-app .sticky-controls {
+          padding: 10px;
+          top: 10px;
+       }
+       
+       .vocab-export-app .sticky-controls .controls-buttons {
+          flex-direction: column;
+          width: 100%;
+       }
+
+       .vocab-export-app .fixed-download-container {
+          padding: 10px;
+       }
+
+       .vocab-export-app .fixed-download-container button {
+          width: 100%;
+          max-width: 280px;
+          font-size: var(--font-size-sm);
+       }
+    }
+
+  </style>
+</head>
+<body>
+  <div id="vocab-export-app" class="vocab-export-app">
+  <!-- Left Sidebar -->
+  <aside class="sidebar" aria-label="主導覽列">
+    <div class="sidebar-header">
+      <h1><i class="fas fa-book-open" aria-hidden="true"></i> VocabExport</h1> <!-- Changed icon -->
+    </div>
+    <nav>
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="#word-wall" class="nav-link active" data-page="word-wall">
+            <i class="fas fa-th-large" aria-hidden="true"></i> <!-- Changed icon -->
+            <span>單字牆</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#vocabulary-cards" class="nav-link" data-page="vocabulary-cards">
+            <i class="fas fa-id-card" aria-hidden="true"></i> <!-- Changed icon -->
+            <span>單字卡片與音檔</span> <!-- MODIFIED: Sidebar navigation text -->
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <!-- Theme Switcher -->
+    <div class="theme-switcher-container" style="margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-color);">
+      <button id="theme-toggle-btn" class="btn btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm);" aria-label="切換色彩模式">
+        <i class="fas fa-moon" aria-hidden="true"></i>
+        <span id="theme-toggle-text">切換至暗黑模式</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <!-- Word Wall Section -->
+    <section id="word-wall" class="content-section active" data-page="word-wall" aria-labelledby="word-wall-heading">
+      <div class="container">
+        <header class="header">
+          <h1 id="word-wall-heading"><i class="fas fa-th-large" aria-hidden="true"></i> 單字牆</h1>
+          <p>快速生成精美的單字牆圖片，適合教學或個人複習使用。</p>
+        </header>
+
+        <section class="usage-steps" aria-labelledby="word-wall-usage-heading">
+          <h2 id="word-wall-usage-heading" class="usage-toggle">
+            <span>使用說明</span>
+            <i class="fas fa-chevron-down"></i>
+          </h2>
+          <div class="steps">
+            <div class="step">
+              <div class="step-number" aria-hidden="true">1</div>
+              <div class="step-content">選擇輸入方式：從 Google Sheet 載入或手動輸入。</div>
+            </div>
+            <div class="step">
+              <div class="step-number" aria-hidden="true">2</div>
+              <div class="step-content">輸入單元標籤或單字列表。</div>
+            </div>
+            <div class="step">
+              <div class="step-number" aria-hidden="true">3</div>
+              <div class="step-content">選擇喜歡的視覺主題。</div>
+            </div>
+            <div class="step">
+              <div class="step-number" aria-hidden="true">4</div>
+              <div class="step-content">點擊「生成單字牆」按鈕。</div>
+            </div>
+            <div class="step">
+              <div class="step-number" aria-hidden="true">5</div>
+              <div class="step-content">預覽並下載生成的圖片。</div>
+          </div>
+        </div>
+        </section>
+
+        <div class="input-mode-switch" role="tablist" aria-label="單字輸入模式">
+          <button class="mode-btn active" data-mode="sheet" role="tab" aria-selected="true" aria-controls="sheet-input-panel">從 Google Sheet 載入</button>
+          <button class="mode-btn" data-mode="manual" role="tab" aria-selected="false" aria-controls="manual-input-panel">手動輸入</button>
+        </div>
+
+        <!-- Google Sheet Input -->
+        <div id="sheet-input-panel" class="sheet-input-container active" role="tabpanel" aria-labelledby="sheet-mode-btn">
+          <div class="label-input-container">
+             <label for="label-input" class="sr-only">Google Sheet 單元標籤</label>
+             <!-- MODIFIED: Added list attribute and updated placeholder -->
+             <input type="text" id="label-input" class="label-input" placeholder="輸入或選擇 Google Sheet 標籤" list="sheet-labels-datalist">
+            <button id="generate-btn" class="btn btn-primary">
+              <i class="fas fa-magic" aria-hidden="true"></i> 生成單字牆
+            </button>
+          </div>
+           <div id="sheet-error-message" class="error-message" aria-live="polite"></div> <!-- Error message area -->
+        </div>
+
+        <!-- Manual Input -->
+        <div id="manual-input-panel" class="manual-input-container" role="tabpanel" aria-labelledby="manual-mode-btn">
+          <div class="bulk-input-container">
+            <div class="bulk-input-column">
+              <label for="english-input" class="bulk-input-label">英文單字 (English Words)</label>
+              <textarea class="bulk-input" id="english-input" placeholder="apple&#10;banana&#10;orange" aria-label="英文單字列表，每行一個"></textarea>
+              <div class="input-hint">每行輸入一個英文單字。</div>
+            </div>
+            <div class="bulk-input-column">
+              <label for="chinese-input" class="bulk-input-label">中文翻譯 (Chinese Translations)</label>
+              <textarea class="bulk-input" id="chinese-input" placeholder="蘋果&#10;香蕉&#10;橘子" aria-label="中文翻譯列表，每行一個，需與英文單字對應"></textarea>
+              <div class="input-hint">每行輸入一個中文翻譯，需與左側英文單字一一對應。</div>
+            </div>
+          </div>
+          <div class="label-input-container">
+            <label for="manual-label-input" class="sr-only">手動輸入標題</label>
+            <input type="text" id="manual-label-input" class="label-input" placeholder="請輸入單字牆標題 (選填，例如：水果單字)">
+            <button id="manual-generate-btn" class="btn btn-primary">
+              <i class="fas fa-magic" aria-hidden="true"></i> 生成單字牆
+            </button>
+          </div>
+           <div id="manual-error-message" class="error-message" aria-live="polite"></div> <!-- Error message area -->
+        </div>
+
+        <!-- Theme Selector -->
+        <section class="theme-selector" aria-labelledby="theme-select-heading">
+          <div class="theme-selector-header" aria-expanded="true" aria-controls="themes-container">
+            <h2 id="theme-select-heading">
+              <i class="fas fa-palette" aria-hidden="true"></i>
+              選擇單字牆主題
+            </h2>
+            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          </div>
+          <div id="themes-container" class="themes expanded">
+            <div class="theme-option" data-theme="rainbow" role="button" tabindex="0" aria-label="選擇彩虹主題">
+              <div class="theme-preview theme-rainbow" aria-hidden="true"></div>
+              <div class="theme-name">彩虹 (預設)</div>
+            </div>
+            <div class="theme-option" data-theme="nature" role="button" tabindex="0" aria-label="選擇自然主題">
+              <div class="theme-preview theme-nature" aria-hidden="true"></div>
+              <div class="theme-name">自然</div>
+            </div>
+            <div class="theme-option" data-theme="ocean" role="button" tabindex="0" aria-label="選擇海洋主題">
+              <div class="theme-preview theme-ocean" aria-hidden="true"></div>
+              <div class="theme-name">海洋</div>
+            </div>
+            <div class="theme-option" data-theme="candy" role="button" tabindex="0" aria-label="選擇甜點主題">
+              <div class="theme-preview theme-candy" aria-hidden="true"></div>
+              <div class="theme-name">甜點</div>
+            </div>
+             <div class="theme-option" data-theme="tech" role="button" tabindex="0" aria-label="選擇科技主題">
+               <div class="theme-preview theme-tech" aria-hidden="true"></div>
+               <div class="theme-name">科技</div>
+            </div>
+            <div class="theme-option" data-theme="classic" role="button" tabindex="0" aria-label="選擇深空主題">
+              <div class="theme-preview theme-classic" aria-hidden="true"></div>
+              <div class="theme-name">深空</div>
+          </div>
+        </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- Vocabulary Cards Section -->
+    <section id="vocabulary-cards" class="content-section" data-page="vocabulary-cards" aria-labelledby="vocab-cards-heading">
+      <div class="container">
+        <header class="header">
+          <h1 id="vocab-cards-heading"><i class="fas fa-id-card" aria-hidden="true"></i> 單字卡片與音檔</h1> <!-- MODIFIED: Section title -->
+          <p>將 Google Sheet 中的單字資料轉換為圖片卡片，並提供對應的英文發音音檔，方便學習、複習與分享。</p> <!-- MODIFIED: Section description -->
+        </header>
+
+        <section class="usage-steps" aria-labelledby="vocab-cards-usage-heading">
+          <h2 id="vocab-cards-usage-heading" class="usage-toggle">
+            <span>使用說明</span>
+            <i class="fas fa-chevron-down"></i>
+          </h2>
+          <div class="steps">
+            <div class="step">
+              <div class="step-number" aria-hidden="true">1</div>
+              <div class="step-content">在下方輸入框中，輸入 Google Sheet 對應的單元標籤。</div>
+            </div>
+            <div class="step">
+              <div class="step-number" aria-hidden="true">2</div>
+              <div class="step-content">點擊「生成單字卡片」按鈕載入資料。</div>
+            </div>
+            <div class="step">
+              <div class="step-number" aria-hidden="true">3</div>
+              <div class="step-content">載入成功後，可點擊「下載所有卡片圖片」或「下載所有音檔」按鈕。</div> <!-- MODIFIED: Step 3 -->
+            </div>
+            <div class="step">
+              <div class="step-number" aria-hidden="true">4</div>
+              <div class="step-content">圖片下載提供預覽彈窗，可單獨或批次下載 (ZIP)。音檔將直接打包為 ZIP 檔案下載。</div> <!-- MODIFIED: Step 4 -->
+            </div>
+            <div class="step">
+              <div class="step-number" aria-hidden="true">5</div>
+              <div class="step-content">音檔內容預設包含單字及例句的男女聲發音（若資料包含例句）。</div> <!-- ADDED: Step 5 -->
+            </div>
+          </div>
+        </section>
+
+        <div class="sticky-controls">
+          <div class="label-input-container">
+             <label for="card-label-input" class="sr-only">Google Sheet 單元標籤</label>
+            <!-- MODIFIED: Added list attribute and updated placeholder -->
+            <input type="text" id="card-label-input" class="label-input" placeholder="輸入或選擇 Google Sheet 標籤" list="sheet-labels-datalist">
+            <button id="generate-cards-btn" class="btn btn-primary">
+              <i class="fas fa-cog" aria-hidden="true"></i> 生成單字卡片
+            </button>
+          </div>
+          <!-- 下載按鈕已移至固定底部容器 -->
+        </div>
+         <div id="cards-error-message" class="error-message" aria-live="polite"></div> <!-- Error message area -->
+
+        <div id="cards-content-area">
+          <!-- Card content will be dynamically generated here -->
+           <p class="placeholder-text" style="text-align: center; color: var(--text-secondary); margin-top: var(--spacing-xl);">請輸入單元標籤並點擊生成按鈕以載入卡片。</p>
+        </div>
+      </div>
+    </section>
+  </main> <!-- End of main content -->
+
+  <!-- ADDED: Datalist for sheet labels -->
+  <datalist id="sheet-labels-datalist">
+    <!-- Options will be populated by JavaScript -->
+  </datalist>
+
+  <!-- Loading Overlay -->
+  <div id="loading" style="display: none;" aria-live="assertive" aria-atomic="true">
+    <div class="loading-content">
+      <i class="fas fa-spinner fa-spin fa-2x" aria-hidden="true"></i> <!-- Changed icon and animation -->
+      <span id="loading-message">載入中...</span>
+    </div>
+  </div>
+
+  <!-- Fixed Download Button Container -->
+  <div id="cards-download-container" class="fixed-download-container" style="display: none;">
+    <button id="download-cards-btn" class="btn btn-primary">
+      <i class="fas fa-download" aria-hidden="true"></i> 下載所有卡片圖片
+    </button>
+    <button id="download-all-audios-btn" class="btn btn-primary" style="display: none; margin-left: 10px;">
+      <i class="fas fa-music" aria-hidden="true"></i> 下載所有音檔
+    </button>
+  </div>
+
+  <!-- Notification Area -->
+  <div id="notification-area" class="notification-area"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> <!-- Updated html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script> <!-- Added JSZip directly -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js"></script>
+  <script>
+    // Constants
+    const CONSTANTS = {
+      SPREADSHEET_ID: "1wSHAL3piJGEJ8EnoyK_W9kkvL42GQYId35UEhMzHTZY",
+      GID: "0",
+      DEFAULT_LABEL: "自定義單字",
+      NOTIFICATION_TIMEOUT: 4000, // 4 seconds
+    };
+
+    // Utility Functions
+    const Utils = {
+      showLoading: (isLoading, message = '載入中...') => {
+        const loadingElement = document.getElementById('loading');
+        const loadingMessageElement = document.getElementById('loading-message');
+        if (loadingElement && loadingMessageElement) {
+           loadingMessageElement.textContent = message;
+           loadingElement.style.display = isLoading ? 'flex' : 'none';
+        }
+      },
+
+      calculateGrid: (itemCount) => {
+        if (itemCount <= 0) return { cols: 1, rows: 1};
+        const targetAspectRatio = 16 / 9;
+        let bestCols = 1;
+        let bestRows = itemCount;
+
+        for (let cols = 1; cols <= Math.ceil(Math.sqrt(itemCount * targetAspectRatio)); cols++) {
+            const rows = Math.ceil(itemCount / cols);
+            if (cols * rows >= itemCount) {
+                // Prefer layouts closer to the target aspect ratio
+                 if (Math.abs(cols / rows - targetAspectRatio) < Math.abs(bestCols / bestRows - targetAspectRatio)) {
+                     bestCols = cols;
+                     bestRows = rows;
+                 } else if (cols * rows < bestCols * bestRows) { // If aspect ratios are similar, prefer fewer cells
+                     bestCols = cols;
+                     bestRows = rows;
+                 }
+            }
+        }
+        return { cols: bestCols, rows: bestRows };
+      },
+
+      calculateFontSize: (wordLength, baseSize, minSizeFactor = 0.6) => {
+        const minSize = baseSize * minSizeFactor;
+        if (wordLength <= 5) return baseSize;
+        if (wordLength <= 8) return baseSize * 0.9;
+        if (wordLength <= 12) return baseSize * 0.8;
+        if (wordLength <= 16) return baseSize * 0.7;
+        return Math.max(minSize, baseSize * 0.6); // Ensure minimum size
+      },
+
+      debounce: (func, wait) => {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func.apply(this, args); // Use apply to maintain context
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      },
+
+      // Simple Notification System
+       showNotification: (message, type = 'info') => { // types: info, success, error
+            const notificationArea = document.getElementById('notification-area');
+            if (!notificationArea) return;
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+
+            let iconClass = 'fas fa-info-circle';
+            if (type === 'success') iconClass = 'fas fa-check-circle';
+            if (type === 'error') iconClass = 'fas fa-exclamation-triangle';
+
+            notification.innerHTML = `<i class="${iconClass}" aria-hidden="true"></i> ${message}`;
+
+            notificationArea.appendChild(notification);
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                notification.classList.add('show');
+            });
+
+
+            // Auto remove after timeout
+            setTimeout(() => {
+                notification.classList.remove('show');
+                notification.addEventListener('transitionend', () => {
+                    if (notification.parentNode === notificationArea) {
+                         notificationArea.removeChild(notification);
+                    }
+                }, { once: true }); // Ensure removal even if transition is interrupted
+            }, CONSTANTS.NOTIFICATION_TIMEOUT);
+        },
+
+        // Clear specific error message areas
+         clearErrorMessage: (elementId) => {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none'; // Hide the container
+            }
+         },
+
+        // Display error messages inline
+         displayErrorMessage: (elementId, message) => {
+             const errorElement = document.getElementById(elementId);
+             if (errorElement) {
+                 errorElement.textContent = message;
+                 errorElement.style.color = 'var(--danger-dark)';
+                 errorElement.style.fontSize = 'var(--font-size-sm)';
+                 errorElement.style.marginTop = 'var(--spacing-sm)';
+                 errorElement.style.display = 'block'; // Show the container
+             } else {
+                 Utils.showNotification(message, 'error'); // Fallback to notification
+             }
+         }
+    };
+
+    // Main Application Class
+    class VocabExportApp {
+      constructor() {
+        this.vocabularyData = []; // Stores [header, ...rows]
+        this.selectedTheme = 'rainbow';
+        this.cachedWallImages = {}; // { theme: blobUrl }
+        this.currentLabel = '';
+        this.lastUsedLabel = ''; // ADDED: To store the last used label across sections
+        this.lastCardsLabel = ''; // ADDED: To store the label used for currently displayed cards
+        this.inputMode = 'sheet'; // 'sheet' or 'manual'
+        this.manualWords = []; // { en: '', cn: '' }
+        this.availableSheetLabels = []; // ADDED: To store unique labels
+        this.ttsCache = {}; // Cache for TTS API responses
+        this.selectedVoice = "en-US-ChristopherNeural"; // Fixed voice
+        this.audioPlaybackRate = 1.0; // Fixed playback rate
+        this.silenceDuration1 = 1.0; // seconds
+        this.silenceDuration1_5 = 1.5; // seconds
+        this.mp3Bitrate = 128;
+        this.currentTheme = 'light'; // ADDED: For theme management
+
+        // Bind methods to ensure 'this' context
+        this.handleGenerate = this.handleGenerate.bind(this);
+        this.handleThemeSelection = this.handleThemeSelection.bind(this);
+        this.handleModeSwitch = this.handleModeSwitch.bind(this);
+        this.handleNavigation = this.handleNavigation.bind(this);
+        this.handleCardGeneration = this.handleCardGeneration.bind(this);
+        this.downloadAllCards = this.downloadAllCards.bind(this); // Bind download method
+        this.fetchAllSheetLabels = this.fetchAllSheetLabels.bind(this); // Bind new method
+        this.populateLabelDatalist = this.populateLabelDatalist.bind(this); // Bind new method
+        this.downloadAllVocabAudios = this.downloadAllVocabAudios.bind(this); // Bind new method
+        this.checkLoginStatus = this.checkLoginStatus.bind(this); // Bind new method
+        this.handleThemeToggle = this.handleThemeToggle.bind(this); // ADDED: Bind theme toggle handler
+
+        this.isUserLoggedIn = false; // Default login status
+        
+        this.setupEventListeners();
+        this.setupThemeSelector();
+        this.setupModeSwitch();
+        this.setupNavigation();
+        this.setupCardGeneration();
+        this.initializeTheme(); // ADDED: Initialize theme
+        
+        this.showInitialSection();
+        this.initializeAppTheme(); // Initialize default theme selection visual state
+
+        this.fetchAllSheetLabels(); // ADDED: Fetch labels on initialization
+        this.checkLoginStatus().then(() => {
+            // Login status checked, potentially update UI elements that depend on it
+            // For example, if cards are already rendered, re-evaluate button states.
+            // This might be more complex if cards can render before this promise resolves.
+            // A simpler approach is to ensure renderCards always checks the latest this.isUserLoggedIn.
+            console.log('[VocabExportApp] Login status confirmed:', this.isUserLoggedIn);
+            // If a re-render or UI update is needed here, it would be added.
+            // For now, renderCards will pick up the updated status.
+        });
+      }
+
+      async checkLoginStatus() {
+        const xsrfToken = this.getXsrfToken();
+        // Note: The tracking-identity API might not strictly need the X-KA-FKey header for a GET request
+        // if it's just checking session cookies, but it's good practice to include it if available.
+        try {
+            const response = await fetch('https://www.junyiacademy.org/api/v2/user/tracking-identity', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    // Conditionally add X-KA-FKey if it exists
+                    ...(xsrfToken && { 'X-KA-FKey': xsrfToken })
+                },
+                credentials: 'include' // Important to send cookies for session validation
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result && typeof result.data === 'object' && typeof result.data.isLoggedIn === 'boolean') {
+                    this.isUserLoggedIn = result.data.isLoggedIn;
+                } else {
+                    console.warn('[VocabExportApp] checkLoginStatus: API response format unexpected.', result);
+                    this.isUserLoggedIn = false; // Default to not logged in on unexpected format
+                }
+            } else {
+                console.warn('[VocabExportApp] checkLoginStatus: API request failed with status:', response.status);
+                this.isUserLoggedIn = false; // Default to not logged in on API error
+            }
+        } catch (error) {
+            console.error('[VocabExportApp] checkLoginStatus: Error fetching login status:', error);
+            this.isUserLoggedIn = false; // Default to not logged in on network error
+        }
+        // No explicit UI update here; renderCards will use this.isUserLoggedIn when it runs.
+    }
+
+      initializeAppTheme() {
+         // Set initial selected theme visually for Word Wall themes
+          const initialThemeOption = document.querySelector(`.theme-option[data-theme="${this.selectedTheme}"]`);
+          if (initialThemeOption) {
+              initialThemeOption.classList.add('selected');
+          }
+          // Set initial state for theme accordion
+           const themeHeader = document.querySelector('.theme-selector-header');
+           const themesContainer = document.querySelector('.themes');
+            if(themeHeader && themesContainer) {
+                // Start expanded
+                themeHeader.classList.remove('collapsed');
+                themesContainer.classList.add('expanded');
+                 themeHeader.setAttribute('aria-expanded', 'true');
+            }
+      }
+
+      initializeTheme() {
+        const storedTheme = localStorage.getItem('vocabExportTheme');
+        this.currentTheme = storedTheme || 'light';
+        this.applyTheme(this.currentTheme);
+      }
+
+      handleThemeToggle() {
+        this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+        this.applyTheme(this.currentTheme);
+        localStorage.setItem('vocabExportTheme', this.currentTheme);
+      }
+
+      applyTheme(theme) {
+        const appElement = document.getElementById('vocab-export-app');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const themeToggleIcon = themeToggleBtn ? themeToggleBtn.querySelector('i') : null;
+        const themeToggleText = document.getElementById('theme-toggle-text');
+
+        if (theme === 'dark') {
+          appElement.classList.add('dark-theme');
+          if (themeToggleIcon) themeToggleIcon.classList.replace('fa-moon', 'fa-sun');
+          if (themeToggleText) themeToggleText.textContent = '切換至淺色模式';
+        } else {
+          appElement.classList.remove('dark-theme');
+          if (themeToggleIcon) themeToggleIcon.classList.replace('fa-sun', 'fa-moon');
+          if (themeToggleText) themeToggleText.textContent = '切換至暗黑模式';
+        }
+      }
+
+      showInitialSection() {
+        document.querySelectorAll('.content-section').forEach(section => {
+          section.classList.remove('active');
+        });
+        const defaultSection = document.querySelector('.content-section[data-page="word-wall"]');
+        if (defaultSection) {
+          defaultSection.classList.add('active');
+        }
+      }
+
+       handleNavigation(event) {
+           event.preventDefault();
+           const link = event.currentTarget;
+            const targetPage = link.dataset.page;
+            
+           document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            
+           document.querySelectorAll('.content-section').forEach(section => {
+               section.classList.toggle('active', section.dataset.page === targetPage);
+           });
+
+           // 處理固定底部下載按鈕的顯示/隱藏
+           const downloadContainer = document.getElementById('cards-download-container');
+           if (downloadContainer) {
+               if (targetPage === 'word-wall') {
+                   // 當切換到單字牆時，隱藏下載按鈕
+                   downloadContainer.style.display = 'none';
+               } else if (targetPage === 'vocabulary-cards') {
+                   // 當切換到單字卡片時，檢查是否已有卡片，有則顯示下載按鈕
+                   const hasCards = document.querySelectorAll('.vocabulary-card').length > 0;
+                   
+                   // 檢查當前輸入的label是否與顯示的卡片相符
+                   const cardLabelInput = document.getElementById('card-label-input');
+                   if (cardLabelInput && this.lastUsedLabel && this.lastCardsLabel && 
+                       this.lastUsedLabel !== this.lastCardsLabel && hasCards) {
+                       // 如果label已變更但頁面仍顯示舊卡片，清空卡片顯示區域
+                       const contentArea = document.getElementById('cards-content-area');
+                       if (contentArea) {
+                           contentArea.innerHTML = `<p class="placeholder-text" style="text-align: center; color: var(--text-secondary); margin-top: var(--spacing-xl);">
+                           您已將標籤從 "${this.lastCardsLabel}" 更改為 "${this.lastUsedLabel}"，請點擊「生成單字卡片」按鈕顯示新內容。</p>`;
+                           // 隱藏下載按鈕
+                           downloadContainer.style.display = 'none';
+                       }
+                   } else if (hasCards) {
+                       downloadContainer.style.display = 'flex';
+                   }
+               }
+           }
+
+           // ADDED: Sync label input when switching sections
+           if (this.lastUsedLabel) {
+               let targetInputId;
+               if (targetPage === 'word-wall') {
+                   targetInputId = 'label-input';
+               } else if (targetPage === 'vocabulary-cards') {
+                   targetInputId = 'card-label-input';
+               }
+
+               if (targetInputId) {
+                   const targetInput = document.getElementById(targetInputId);
+                   if (targetInput) {
+                       targetInput.value = this.lastUsedLabel;
+                   }
+               }
+           }
+       }
+
+      setupNavigation() {
+        document.querySelectorAll('.nav-link').forEach(link => {
+          link.addEventListener('click', this.handleNavigation);
+        });
+      }
+
+       handleThemeSelection(event) {
+           const target = event.target;
+           const themeHeader = target.closest('.theme-selector-header');
+           const themeOption = target.closest('.theme-option');
+        const themesContainer = document.querySelector('.themes');
+           const headerElement = document.querySelector('.theme-selector-header');
+
+
+           if (themeHeader) {
+                const isCollapsed = headerElement.classList.toggle('collapsed');
+                themesContainer.classList.toggle('expanded', !isCollapsed);
+                headerElement.setAttribute('aria-expanded', String(!isCollapsed));
+            return;
+          }
+          
+          if (themeOption) {
+            document.querySelectorAll('.theme-option').forEach(opt => {
+              opt.classList.remove('selected');
+            });
+            themeOption.classList.add('selected');
+            this.selectedTheme = themeOption.dataset.theme;
+                // Optionally trigger preview update if image already generated
+                // this.updatePreviewForSelectedTheme();
+           }
+       }
+
+      setupThemeSelector() {
+        const themeSelector = document.querySelector('.theme-selector');
+        if (themeSelector) {
+            // Debounced click for performance and preventing rapid toggles
+            themeSelector.addEventListener('click', Utils.debounce(this.handleThemeSelection, 50));
+
+             // Add keydown listener for accessibility (Enter/Space to select)
+              themeSelector.addEventListener('keydown', (event) => {
+                   const themeOption = event.target.closest('.theme-option');
+                   if (themeOption && (event.key === 'Enter' || event.key === ' ')) {
+                        event.preventDefault(); // Prevent page scroll on Space
+                        this.handleThemeSelection({ target: themeOption }); // Simulate click
+                   }
+                     const themeHeader = event.target.closest('.theme-selector-header');
+                      if (themeHeader && (event.key === 'Enter' || event.key === ' ')) {
+                           event.preventDefault();
+                           this.handleThemeSelection({ target: themeHeader });
+                      }
+              });
+        }
+      }
+
+       handleModeSwitch(event) {
+           const btn = event.currentTarget;
+           const targetMode = btn.dataset.mode;
+           if (targetMode === this.inputMode) return; // No change
+
+           this.inputMode = targetMode;
+
+           document.querySelectorAll('.mode-btn').forEach(b => {
+               b.classList.toggle('active', b.dataset.mode === this.inputMode);
+               b.setAttribute('aria-selected', String(b.dataset.mode === this.inputMode));
+           });
+
+           document.querySelectorAll('[role="tabpanel"]').forEach(panel => {
+               const isActive = panel.id.startsWith(this.inputMode);
+               panel.classList.toggle('active', isActive);
+               panel.style.display = isActive ? 'block' : 'none'; // Ensure display is set correctly
+           });
+
+           // Clear cache when switching modes as the source data changes
+            this.cleanupCachedImages();
+           // Clear potential error messages
+           Utils.clearErrorMessage('sheet-error-message');
+           Utils.clearErrorMessage('manual-error-message');
+       }
+
+
+      setupModeSwitch() {
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+          btn.addEventListener('click', this.handleModeSwitch);
+        });
+      }
+
+       async handleGenerate(isManual) {
+            const generateButton = document.getElementById(isManual ? 'manual-generate-btn' : 'generate-btn');
+            const labelInput = document.getElementById(isManual ? 'manual-label-input' : 'label-input');
+            const errorElementId = isManual ? 'manual-error-message' : 'sheet-error-message';
+            Utils.clearErrorMessage(errorElementId); // Clear previous errors
+            generateButton.disabled = true; // Disable button during processing
+
+            const label = isManual
+                ? labelInput.value.trim() || CONSTANTS.DEFAULT_LABEL // Use default if empty
+                : labelInput.value.trim();
+
+            if (!isManual && !label) {
+                Utils.displayErrorMessage(errorElementId, '請輸入 Google Sheet 中的單元標籤 (例如：unit1)。');
+                generateButton.disabled = false;
+                return;
+            }
+
+            // ADDED: Update last used label
+            if (label) {
+                this.lastUsedLabel = label;
+            }
+
+            try {
+          if (isManual) {
+                    const englishInput = document.getElementById('english-input');
+                    const chineseInput = document.getElementById('chinese-input');
+                    const englishWords = englishInput.value.trim().split('\n').map(w => w.trim()).filter(Boolean);
+                    const chineseTranslations = chineseInput.value.trim().split('\n').map(w => w.trim()).filter(Boolean);
+            
+            if (englishWords.length === 0) {
+                        Utils.displayErrorMessage(errorElementId, '請至少輸入一個有效的英文單字。');
+                        generateButton.disabled = false;
+              return;
+            }
+            
+                    if (chineseTranslations.length > 0 && chineseTranslations.length !== englishWords.length) {
+                         Utils.displayErrorMessage(errorElementId, '英文單字和中文翻譯的數量必須相同，或只提供英文單字。');
+                         generateButton.disabled = false;
+              return;
+            }
+            
+            this.manualWords = englishWords.map((en, index) => ({
+                        en: en,
+                        cn: chineseTranslations[index] || '' // Allow empty translation
+                    }));
+
+                    // No header for manual data in vocabularyData structure
+                    this.vocabularyData = this.manualWords.map(word => [word.en, '', word.cn, '', '', '', '', '']); // Match sheet structure
+
+                    this.currentLabel = label; // Use the provided or default label
+                    await this.preloadWallImages(this.manualWords, this.currentLabel);
+
+                } else { // Google Sheet Mode
+                    if (label !== this.currentLabel || !this.cachedWallImages[this.selectedTheme]) {
+                        // Label changed or image not cached for current theme
+            this.currentLabel = label;
+                        this.cleanupCachedImages(); // Clear old cache if label changed
+                        await this.loadVocabularyData(label); // Loads data and triggers preload
+          } else {
+                         // Data and image likely cached, just show preview
+              this.updatePreviewForSelectedTheme();
+                    }
+                }
+            } catch (error) {
+                 console.error('生成單字牆時發生錯誤:', error);
+                 Utils.displayErrorMessage(errorElementId, `處理失敗：${error.message}`);
+                 Utils.showNotification(`生成單字牆失敗: ${error.message}`, 'error');
+            } finally {
+                 generateButton.disabled = false; // Re-enable button
+            }
+       }
+
+
+      setupEventListeners() {
+        const generateBtn = document.getElementById('generate-btn');
+        const manualGenerateBtn = document.getElementById('manual-generate-btn');
+        const labelInput = document.getElementById('label-input');
+        const manualLabelInput = document.getElementById('manual-label-input');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn'); // ADDED
+
+        if (generateBtn) {
+            generateBtn.addEventListener('click', Utils.debounce(() => this.handleGenerate(false), 300));
+        }
+        if (manualGenerateBtn) {
+            manualGenerateBtn.addEventListener('click', Utils.debounce(() => this.handleGenerate(true), 300));
+        }
+
+        const handleEnter = (e, isManual) => {
+          if (e.key === 'Enter' && !e.shiftKey) { // Enter without Shift
+            e.preventDefault(); // Prevent default form submission/newline
+            this.handleGenerate(isManual);
+          }
+        };
+
+        if (labelInput) {
+        labelInput.addEventListener('keypress', (e) => handleEnter(e, false));
+        }
+        if (manualLabelInput) {
+        manualLabelInput.addEventListener('keypress', (e) => handleEnter(e, true));
+        }
+
+        if (themeToggleBtn) { // ADDED
+          themeToggleBtn.addEventListener('click', this.handleThemeToggle);
+        }
+
+         // Clear errors when input changes
+          [labelInput, manualLabelInput, document.getElementById('english-input'), document.getElementById('chinese-input')].forEach(input => {
+             if (input) {
+                 input.addEventListener('input', () => {
+                     if (input === labelInput) Utils.clearErrorMessage('sheet-error-message');
+                     if (input === manualLabelInput || input.id === 'english-input' || input.id === 'chinese-input') Utils.clearErrorMessage('manual-error-message');
+                 });
+             }
+         });
+      }
+
+      updatePreviewForSelectedTheme() {
+        console.log(`[updatePreviewForSelectedTheme] Called. Selected theme: ${this.selectedTheme}`);
+        if (this.cachedWallImages && this.cachedWallImages[this.selectedTheme]) {
+          console.log(`[updatePreviewForSelectedTheme] Found cached image for ${this.selectedTheme}. Calling showWordWallPreview.`);
+          this.showWordWallPreview(this.cachedWallImages[this.selectedTheme]);
+        } else {
+           // Handle case where image is not ready (e.g., show a message or disable preview)
+           console.warn(`[updatePreviewForSelectedTheme] Image for theme ${this.selectedTheme} is not ready or cached.`);
+             // Optionally show a notification or disable a preview button
+             // Utils.showNotification(`主題 ${this.selectedTheme} 的圖片正在生成中...`, 'info');
+        }
+      }
+
+      showWordWallPreview(imageUrl) {
+        console.log(`[showWordWallPreview] Called with imageUrl (length: ${imageUrl?.length || 0})`);
+          // Remove existing modal first
+          const existingModal = document.querySelector('.word-wall-modal');
+           if (existingModal) {
+               existingModal.remove();
+           }
+
+          const fragment = document.createDocumentFragment();
+        const modal = document.createElement('div');
+        modal.className = 'word-wall-modal';
+          modal.setAttribute('role', 'dialog');
+          modal.setAttribute('aria-modal', 'true');
+          modal.setAttribute('aria-labelledby', 'word-wall-preview-title');
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'word-wall-modal-content';
+        
+          // Add a title to the modal for accessibility
+           const title = document.createElement('h3');
+           title.id = 'word-wall-preview-title';
+           title.className = 'sr-only'; // Visually hidden title
+           title.textContent = `單字牆預覽 - ${this.currentLabel} (${this.selectedTheme} 主題)`;
+           modalContent.appendChild(title);
+        
+        const img = document.createElement('img');
+        img.className = 'word-wall-preview';
+        img.src = imageUrl;
+          img.alt = `單字牆預覽：${this.currentLabel} - ${this.selectedTheme} 主題`;
+        
+        const controls = document.createElement('div');
+        controls.className = 'word-wall-modal-controls';
+        
+        // 創建下載按鈕
+        const downloadBtn = document.createElement('a');
+        downloadBtn.className = 'btn btn-primary btn-download';
+        downloadBtn.href = imageUrl;
+        
+        // 處理檔名
+        const safeLabel = this.currentLabel.replace(/[^a-z0-9_\-]/gi, '_').substring(0, 30);
+        const safeTheme = this.selectedTheme.replace(/[^a-z0-9_\-]/gi, '_');
+        downloadBtn.download = `VocabExport_${safeLabel}_${safeTheme}.png`;
+        downloadBtn.innerHTML = '<i class="fas fa-download" aria-hidden="true"></i> 下載圖片';
+        downloadBtn.setAttribute('role', 'button');
+        
+        // 創建關閉按鈕
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn btn-secondary btn-close';
+        closeBtn.innerHTML = '<i class="fas fa-times"></i> 關閉預覽';
+        closeBtn.style.padding = '8px 16px';
+        closeBtn.style.backgroundColor = '#64748b';
+        closeBtn.style.color = '#ffffff';
+        closeBtn.style.border = 'none';
+        closeBtn.style.borderRadius = '6px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.fontSize = '14px';
+        closeBtn.style.fontWeight = '500';
+        closeBtn.style.display = 'inline-flex';
+        closeBtn.style.alignItems = 'center';
+        closeBtn.style.justifyContent = 'center';
+        closeBtn.style.transition = 'all 0.2s ease';
+        
+        // 添加關閉按鈕懸停效果
+        closeBtn.addEventListener('mouseenter', function() {
+          this.style.backgroundColor = '#475569';
+          this.style.transform = 'translateY(-1px)';
+        });
+        
+        closeBtn.addEventListener('mouseleave', function() {
+          this.style.backgroundColor = '#64748b';
+          this.style.transform = 'translateY(0)';
+        });
+        
+        // 設置關閉預覽函數
+        closeBtn.onclick = () => {
+          console.log('關閉單字牆預覽');
+          const wallModalToRemove = document.querySelector('.word-wall-modal');
+          if (wallModalToRemove) {
+            const parent = wallModalToRemove.parentNode;
+            if (parent) {
+              parent.removeChild(wallModalToRemove);
+            } else {
+              wallModalToRemove.remove();
+            }
+          }
+        };
+        
+        controls.appendChild(downloadBtn);
+        controls.appendChild(closeBtn);
+        modalContent.appendChild(img);
+        modalContent.appendChild(controls);
+        modal.appendChild(modalContent);
+        fragment.appendChild(modal);
+        
+        // 將模態框添加到DOM，確保安全處理
+        const appContainer = document.querySelector('.vocab-export-app');
+        if (appContainer) {
+            appContainer.appendChild(fragment);
+        } else {
+            document.body.appendChild(fragment);
+            console.warn('找不到.vocab-export-app元素，已將fragment添加到document.body');
+        }
+
+        // Focus the close button for accessibility
+        closeBtn.focus();
+      }
+
+      async loadVocabularyData(label) {
+            Utils.showLoading(true, `正在從 Google Sheet 載入標籤 \"${label}\" 的資料...`);
+            const errorElementId = 'sheet-error-message';
+            Utils.clearErrorMessage(errorElementId);
+
+        try {
+          const url = `https://docs.google.com/spreadsheets/d/${CONSTANTS.SPREADSHEET_ID}/export?format=csv&gid=${CONSTANTS.GID}`;
+          const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`無法載入試算表資料 (HTTP ${response.status})。請檢查網路連線或試算表權限。`);
+                }
+
+          const csvText = await response.text();
+                if (!csvText || !csvText.trim()) {
+                   throw new Error('從 Google Sheet 獲取的資料為空。請檢查試算表內容。');
+                }
+
+                const { data, errors } = Papa.parse(csvText, { header: false });
+
+                if (errors.length > 0) {
+                     console.warn("CSV 解析時發生錯誤:", errors);
+                }
+
+                if (!data || data.length < 1) { // Check if data exists at all
+                   throw new Error('解析後的資料為空或格式不符。');
+                }
+
+                // Original logic assumed first row might or might not be a header used for display
+                const allRows = data;
+                const headerRowForDisplay = allRows[0]; // Keep potential header for display/structure if needed
+
+                // Original logic: Filter based on the first column (index 0)
+                const filteredData = allRows.filter((row, index) => {
+                    // Skip the very first row if it looks like a header (heuristic, adjust if needed)
+                    // Or simply always skip the first row if it's guaranteed to be a header you don't filter on.
+                    // if (index === 0) return false;
+                    return row[0]?.trim().toLowerCase() === label.toLowerCase();
+                 });
+
+                if (filteredData.length === 0) {
+                    throw new Error(`在 Google Sheet 中找不到標籤 (Label) 為 \"${label}\" 的資料。請檢查標籤名稱是否正確 (第一欄)。`);
+                }
+
+                // Original logic: Slice off the first column (Label) for vocabularyData
+                // Assume headerRowForDisplay exists and has enough columns if needed
+                const slicedHeader = headerRowForDisplay?.slice(1) || [];
+                this.vocabularyData = [slicedHeader, ...filteredData.map(row => row.slice(1))];
+
+                // Original logic: Extract word pairs from the *sliced* data
+                // Index 0 = English (original col 1), Index 2 = Chinese (original col 3)
+          const wordPairs = this.vocabularyData.slice(1).map(row => ({
+                    en: row[0]?.trim() || '', // English is now at index 0 of the sliced row
+                    cn: row[2]?.trim() || ''  // Chinese is now at index 2 of the sliced row
+                })).filter(pair => pair.en); // Filter out rows without English word
+
+                if (wordPairs.length === 0) {
+                     throw new Error(`標籤 \"${label}\" 下沒有找到有效的英文單字 (第二欄)。`);
+                }
+
+                // Trigger image preloading with extracted word pairs
+                await this.preloadWallImages(wordPairs, label);
+
+        } catch (error) {
+                console.error('載入 Google Sheet 資料失敗 (Word Wall):', error);
+                 Utils.displayErrorMessage(errorElementId, `載入資料失敗：${error.message}`);
+                throw error; // Re-throw for handleGenerate to catch
+            } finally {
+                 Utils.showLoading(false);
+            }
+        }
+
+        // ... (preloadWallImages and other methods remain the same) ...
+
+        async loadAndProcessCardData(label) {
+             Utils.showLoading(true, `正在從 Google Sheet 載入標籤 \"${label}\" 的卡片資料...`);
+             const errorElementId = 'cards-error-message'; // Specific error area for cards
+             Utils.clearErrorMessage(errorElementId);
+
+             try {
+                  const url = `https://docs.google.com/spreadsheets/d/${CONSTANTS.SPREADSHEET_ID}/export?format=csv&gid=${CONSTANTS.GID}`;
+                  const response = await fetch(url);
+                  if (!response.ok) throw new Error(`無法載入試算表資料 (HTTP ${response.status})。`);
+
+                  const csvText = await response.text();
+                  if (!csvText?.trim()) throw new Error('從 Google Sheet 獲取的資料為空。');
+
+                  const { data, errors } = Papa.parse(csvText, { header: false });
+                   if (errors.length > 0) console.warn("CSV 解析時發生錯誤 (Cards):", errors);
+                   if (!data || data.length < 1) throw new Error('解析後的資料為空或格式不符。');
+
+                  const allRows = data;
+                  const headerRowForDisplay = allRows[0];
+
+                  // Filter based on the first column (index 0)
+                  const filteredData = allRows.filter((row, index) => {
+                     // if (index === 0) return false; // Optionally skip header row
+                     return row[0]?.trim().toLowerCase() === label.toLowerCase();
+                  });
+
+                  if (filteredData.length === 0) throw new Error(`找不到標籤為 \"${label}\" 的資料 (第一欄)。`);
+
+                  // Original logic: Slice off the first column (Label)
+                  const slicedHeader = headerRowForDisplay?.slice(1) || [];
+                  this.vocabularyData = [slicedHeader, ...filteredData.map(row => row.slice(1))];
+
+                  // Check if any actual data exists in the filtered & sliced rows
+                  const hasContent = this.vocabularyData.slice(1).some(row => row.some(cell => cell?.trim()));
+                   if (!hasContent) throw new Error(`標籤 \"${label}\" 的資料似乎是空的 (除了 Label 欄)。`);
+
+             } catch (error) {
+                  console.error('載入卡片資料失敗 (Cards):', error);
+                  Utils.displayErrorMessage(errorElementId, `載入卡片資料失敗：${error.message}`);
+                  throw error; // Re-throw for the caller to handle UI updates
+             } finally {
+        Utils.showLoading(false);
+             }
+        }
+
+       renderCards(vocabularyData) {
+        // console.log('[VocabExportApp] renderCards: Method called.'); // REMOVED DEBUG LOG
+
+        const contentArea = document.getElementById('cards-content-area');
+        if (!contentArea) {
+            // console.error('[VocabExportApp] renderCards: Content area (cards-content-area) not found.'); // REMOVED DEBUG LOG
+            return;
+        }
+
+        if (!vocabularyData || vocabularyData.length < 2) {
+            contentArea.innerHTML = '<p class="placeholder-text" style="text-align: center; color: var(--text-secondary); margin-top: var(--spacing-xl);">沒有可顯示的卡片資料。</p>';
+            const downloadContainer = document.getElementById('cards-download-container');
+            if (downloadContainer) {
+                downloadContainer.style.display = 'none';
+            }
+            // console.log('[VocabExportApp] renderCards: No vocabulary data or less than 2 rows. Hiding download container.'); // REMOVED DEBUG LOG
+            return;
+        }
+
+        const header = vocabularyData[0];
+        const dataRows = vocabularyData.slice(1);
+
+        const findIndex = (name) => {
+            if (name === 'mark_start') {
+                for (let i = 0; i < header.length; i++) {
+                    const col = header[i]?.trim().toLowerCase() || '';
+                    if (col === 'mark_start') return i;
+                }
+            }
+            if (name === 'mark_end') {
+                 for (let i = 0; i < header.length; i++) {
+                    const col = header[i]?.trim().toLowerCase() || '';
+                    if (col === 'mark_end') return i;
+                }
+            }
+            return header.findIndex(h => h?.trim().toLowerCase() === name.toLowerCase());
+        };
+
+        const englishIndex = findIndex('英文');
+        const pronunciationIndex = findIndex('音標') > -1 ? findIndex('音標') : findIndex('pronunciation');
+        const translationIndex = findIndex('中譯') > -1 ? findIndex('中譯') : findIndex('translation');
+        const exampleIndex = findIndex('例句') > -1 ? findIndex('例句') : findIndex('example');
+        const exampleTranslationIndex = findIndex('翻譯') > -1 ? findIndex('翻譯') : findIndex('exampletranslation');
+        const markStartIndex = findIndex('mark_start');
+        const markEndIndex = findIndex('mark_end');
+        
+        // console.log('[VocabExportApp] renderCards - Column Indices:', { // REMOVED DEBUG LOG
+        //     englishIndex, pronunciationIndex, translationIndex, exampleIndex, exampleTranslationIndex, markStartIndex, markEndIndex
+        // });
+
+        if (englishIndex === -1) {
+            contentArea.innerHTML = '<p class="placeholder-text error" style="text-align: center; color: var(--danger-dark); margin-top: var(--spacing-xl);">錯誤：試算表中缺少 "English" (英文) 欄位。</p>';
+            const downloadContainer = document.getElementById('cards-download-container');
+            if (downloadContainer) {
+                downloadContainer.style.display = 'none';
+            }
+            // console.error('[VocabExportApp] renderCards: English column index not found.'); // REMOVED DEBUG LOG
+            return;
+        }
+
+        let cardHtml = '';
+        dataRows.forEach((row, index) => {
+            const english = row[englishIndex]?.trim() || '';
+            if (!english) return; // Skip row if English word is missing
+
+            const pronunciation = pronunciationIndex > -1 ? row[pronunciationIndex]?.trim() || '' : '';
+            const translation = translationIndex > -1 ? row[translationIndex]?.trim() || '' : '';
+            const example = exampleIndex > -1 ? row[exampleIndex]?.trim() || '' : '';
+            const exampleTranslation = exampleTranslationIndex > -1 ? row[exampleTranslationIndex]?.trim() || '' : '';
+            const markStart = markStartIndex > -1 ? row[markStartIndex]?.trim() : '';
+            const markEnd = markEndIndex > -1 ? row[markEndIndex]?.trim() : '';
+
+            let markedExample = example;
+            if (example && markStart && markEnd) {
+                const words = example.split(' ');
+                const start = parseInt(markStart) - 1;
+                const end = parseInt(markEnd) - 1;
+                if (!isNaN(start) && !isNaN(end) && start >= 0 && start <= end && end < words.length) {
+                    words[start] = `<span class="highlight">${words[start]}`;
+                    words[end] = `${words[end]}</span>`;
+                    markedExample = words.join(' ');
+                } else {
+                    // console.warn(`[VocabExportApp] Invalid mark indices (Start: ${markStart}, End: ${markEnd}) for example: "${example}"`); // Keeping this warn for now
+                }
+            }
+
+            cardHtml += `
+              <article class="vocabulary-card card" id="card-${index}" aria-labelledby="card-title-${index}">
+                <h3 id="card-title-${index}">${english}</h3>
+                ${pronunciation ? `<div class="vocabulary-item"><strong>音標:</strong> ${pronunciation}</div>` : ''}
+                ${translation ? `<div class="vocabulary-item"><strong>中譯:</strong> ${translation}</div>` : ''}
+                ${example ? `
+                  <div class="example">
+                    <div>${markedExample || example}</div>
+                    ${exampleTranslation ? `<div>${exampleTranslation}</div>` : ''}
+                  </div>
+                ` : ''}
+              </article>
+            `;
+        });
+
+        const downloadImageBtn = document.getElementById('download-cards-btn');
+        const downloadAudiosBtn = document.getElementById('download-all-audios-btn');
+        const downloadContainer = document.getElementById('cards-download-container');
+
+        // console.log('[VocabExportApp] renderCards: Checking button elements immediately after getElementById:'); // REMOVED DEBUG LOG
+        // console.log('[VocabExportApp] renderCards: downloadImageBtn is:', downloadImageBtn); // REMOVED DEBUG LOG
+        // console.log('[VocabExportApp] renderCards: downloadAudiosBtn is:', downloadAudiosBtn);  // REMOVED DEBUG LOG
+        // console.log('[VocabExportApp] renderCards: downloadContainer is:', downloadContainer); // REMOVED DEBUG LOG
+
+        if (cardHtml) {
+            // console.log('[VocabExportApp] renderCards: cardHtml IS present. Setting up card content and download buttons.'); // REMOVED DEBUG LOG
+            contentArea.innerHTML = `<div class="vocabulary-grid">${cardHtml}</div>`;
+
+            if (downloadContainer) {
+                downloadContainer.style.display = 'flex';
+                // console.log('[VocabExportApp] renderCards: Download container display set to flex.'); // REMOVED DEBUG LOG
+            } else {
+                // console.error('[VocabExportApp] renderCards: downloadContainer not found!'); // Keeping this error for now
+            }
+
+            if (downloadImageBtn) {
+                const newImageBtn = downloadImageBtn.cloneNode(true);
+                if (downloadImageBtn.parentNode) {
+                    downloadImageBtn.parentNode.replaceChild(newImageBtn, downloadImageBtn);
+                    newImageBtn.addEventListener('click', this.downloadAllCards);
+                    // console.log('[VocabExportApp] renderCards: Image download button processed.'); // REMOVED DEBUG LOG
+                } else {
+                     // console.error('[VocabExportApp] renderCards: downloadImageBtn has no parentNode.'); // Keeping this error for now
+                }
+            } else {
+                // console.warn('[VocabExportApp] renderCards: Image download button (download-cards-btn) not found.'); // Keeping this warn for now
+            }
+
+            if (downloadAudiosBtn) {
+                const newAudioBtn = downloadAudiosBtn.cloneNode(true); 
+                // const hasFkey = !!this.getXsrfToken(); // REPLACED: No longer solely relying on fkey
+                console.log('[VocabExportApp] renderCards - Login status check: User is logged in:', this.isUserLoggedIn); // DEBUGGING
+
+                if (this.isUserLoggedIn) { // MODIFIED: Check this.isUserLoggedIn instead of just fkey
+                    newAudioBtn.style.display = 'inline-flex';
+                    newAudioBtn.disabled = false;
+                    newAudioBtn.title = '下載所有詞彙的發音檔 (MP3)';
+                    newAudioBtn.innerHTML = '<i class="fas fa-music" aria-hidden="true"></i> 下載所有音檔';
+                    newAudioBtn.addEventListener('click', this.downloadAllVocabAudios);
+                } else {
+                    newAudioBtn.style.display = 'inline-flex'; // 即使禁用也顯示按鈕
+                    newAudioBtn.disabled = true;
+                    newAudioBtn.title = '請先登入均一教育平台帳號才能下載音檔。';
+                    newAudioBtn.innerHTML = '<i class="fas fa-ban" aria-hidden="true"></i> 音檔下載 (需登入)';
+                    // 不需要為禁用的按鈕添加下載事件監聽器
+                }
+
+                if (downloadAudiosBtn.parentNode) {
+                    downloadAudiosBtn.parentNode.replaceChild(newAudioBtn, downloadAudiosBtn);
+                } else {
+                    // This case should ideally not be hit if the button is always in the DOM initially
+                    // and we are just replacing it. If it could be added fresh, this path might be needed.
+                    // For now, assuming parentNode always exists for replacement.
+                    console.warn('[VocabExportApp] renderCards: downloadAudiosBtn had no parentNode for replacement. This might indicate an issue if the button was not found in the DOM as expected.');
+                }
+            } else {
+                // console.warn('[VocabExportApp] renderCards: Audio download button (download-all-audios-btn) was NOT found by getElementById (it is null).'); // Keeping this warn for now
+            }
+        } else { 
+            // console.log('[VocabExportApp] renderCards: cardHtml is NOT present. Hiding download container and setting placeholder text.'); // REMOVED DEBUG LOG
+            contentArea.innerHTML = '<p class="placeholder-text" style="text-align: center; color: var(--text-secondary); margin-top: var(--spacing-xl);">在此標籤下未找到有效的單字卡資料。</p>';
+            if (downloadContainer) {
+                downloadContainer.style.display = 'none';
+            }
+        }
+      }
+
+        // ... (downloadAllCards and other methods remain the same) ...
+
+      async preloadWallImages(wordPairs, label) {
+            Utils.showLoading(true, `正在生成 "${label}" 的單字牆預覽圖...`);
+            this.cleanupCachedImages();
+
+            const themes = ['rainbow', 'nature', 'ocean', 'candy', 'tech', 'classic'];
+            const imagePromises = themes.map(theme => {
+              return this.generateWallImageForTheme(theme, wordPairs, label)
+                .then(imageUrl => ({ theme, imageUrl }))
+                .catch(error => {
+                  console.error(`預載主題 \"${theme}\" 失敗:`, error);
+                  return { theme, imageUrl: null };
+                })
+            });
+
+            try {
+              const results = await Promise.all(imagePromises);
+              results.forEach(({ theme, imageUrl }) => {
+                if (imageUrl) {
+                  this.cachedWallImages[theme] = imageUrl;
+                }
+              });
+
+              this.updatePreviewForSelectedTheme();
+              Utils.showNotification(`"${label}" 的單字牆主題已準備好。`, 'success');
+
+            } catch (error) {
+              console.error("預載單字牆圖片時發生未預期的錯誤:", error);
+              Utils.showNotification("生成部分單字牆主題時發生錯誤。", 'error');
+            } finally {
+              Utils.showLoading(false);
+            }
+        }
+
+
+      async generateWallImageForTheme(theme, wordPairs, label) {
+            // --- Original Implementation Start ---
+        const fragment = document.createDocumentFragment();
+            const container = document.createElement('div'); // Define container outside try
+            let tempContainerAppended = false; // Flag to track if container was added to body
+        
+            try {
+        container.className = 'word-wall-container';
+        Object.assign(container.style, {
+          position: 'fixed',
+          left: '-9999px',
+          top: '0',
+          width: '1920px',
+          height: '1080px',
+          display: 'grid',
+          padding: '40px',
+          boxSizing: 'border-box',
+                  placeItems: 'center', // Changed from stretch in previous attempt
+                  gap: '10px' // Restored original gap
+                  // visibility: 'hidden' // Removed visibility hidden from previous attempt
+        });
+                fragment.appendChild(container); // Append to fragment first
+                tempContainerAppended = true; // Set flag after appending
+
+        const title = label ? `${label.toUpperCase()} - 單字牆` : '單字牆';
+        const headerFooterFragment = document.createDocumentFragment();
+        
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'word-wall-title';
+                // Restore original innerHTML setting for title
+        titleDiv.innerHTML = `<i class="fas fa-book"></i> ${title}`;
+                // Apply original styles needed for canvas
+                Object.assign(titleDiv.style, {
+                    position: 'absolute',
+                    top: '20px', // Original position
+                    left: '0',
+                    right: '0',
+                    textAlign: 'center',
+                    color: '#ffffff', // Assume default white for title
+                    fontSize: '28px', // Original size
+                    fontWeight: 'bold',
+                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)', // Original shadow
+                    zIndex: 1
+                });
+        headerFooterFragment.appendChild(titleDiv);
+
+        const footerDiv = document.createElement('div');
+        footerDiv.className = 'word-wall-footer';
+        footerDiv.textContent = 'Junyi Academy 均一教育平台';
+                 // Apply original styles needed for canvas
+                Object.assign(footerDiv.style, {
+                    position: 'absolute',
+                    bottom: '20px', // Original position
+                    left: '0',
+                    right: '0',
+                    textAlign: 'center',
+                    color: 'rgba(255, 255, 255, 0.5)', // Original color
+                    fontSize: '16px', // Original size
+                    zIndex: 1
+                 });
+        headerFooterFragment.appendChild(footerDiv);
+
+        container.appendChild(headerFooterFragment);
+
+        const grid = Utils.calculateGrid(wordPairs.length);
+        Object.assign(container.style, {
+          gridTemplateColumns: `repeat(${grid.cols}, 1fr)`,
+          gridTemplateRows: `repeat(${grid.rows}, 1fr)`
+        });
+
+                // Restore original base font size calculation approach
+        const baseSize = Math.min(900 / grid.cols, 36);
+        const themeColors = this.getThemeColorsByName(theme);
+                container.style.background = themeColors.background; // Use original 'background' property
+
+        const wordsFragment = document.createDocumentFragment();
+        wordPairs.forEach((pair, index) => {
+          const wordDiv = document.createElement('div');
+                  wordDiv.className = 'word-wall-word'; // Original class
+
+                  // Restore original font size calculation
+          let fontSize = Utils.calculateFontSize(pair.en.length, baseSize);
+                  fontSize *= 1.15; // Original multiplier
+          
+          const colorIndex = index % themeColors.colors.length;
+          const themeColor = themeColors.colors[colorIndex];
+          const hue = this.calculateHue(themeColor);
+          
+          const wordEnDiv = document.createElement('div');
+          wordEnDiv.className = 'wall-word-en';
+          wordEnDiv.textContent = pair.en;
+                  wordEnDiv.style.fontSize = `${fontSize}px`; // Set font size
+          
+          let wordCnDiv = null;
+          if (pair.cn) {
+              wordCnDiv = document.createElement('div');
+              wordCnDiv.className = 'wall-word-cn';
+              wordCnDiv.textContent = pair.cn;
+                      // Original CN font size calculation
+              wordCnDiv.style.fontSize = `${fontSize * 0.75}px`;
+          }
+
+                  // Restore original color and style logic
+          let enColor = themeColors.textColor;
+          let cnColor = themeColors.textColor;
+          let cnOpacity = 0.85;
+          let bgColor = `hsla(${hue}, 85%, 65%, 0.2)`;
+                  let borderStyle = `3px solid hsla(${hue}, 85%, 65%, 0.6)`; // Original border width/style
+                  let boxShadow = ''; // Original default
+                  let textShadow = ''; // Original default
+
+                  // Original theme-specific style overrides
+          if (theme !== 'rainbow' && theme !== 'classic') {
+            enColor = themeColor;
+            cnColor = themeColor;
+                    bgColor = `hsla(${hue}, 85%, 95%, 0.8)`; // Original light background
+                    borderStyle = `3px solid ${themeColor}`; // Original border
+                    if(themeColors.effects) { // Check if effects exist (original check)
+              boxShadow = themeColors.effects.boxShadow || '';
+              textShadow = themeColors.effects.textShadow || '';
+            }
+                  } else if (theme === 'rainbow' || theme === 'classic') {
+                     // Apply default text color if rainbow/classic (original logic)
+                     enColor = themeColors.textColor || '#ffffff';
+                     cnColor = themeColors.textColor || '#ffffff';
+                     // Use default bg/border for these themes
+                     bgColor = `hsla(${hue}, 85%, 65%, 0.2)`;
+                     borderStyle = `3px solid hsla(${hue}, 85%, 65%, 0.6)`;
+                     // Original shadow defaults for these themes
+                     boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                     textShadow = '0 1px 2px rgba(0, 0, 0, 0.2)';
+                  }
+
+          
+          wordEnDiv.style.color = enColor;
+          wordEnDiv.style.fontFamily = "'Arial', sans-serif"; // 設定英文使用 Arial 字型
+          wordEnDiv.style.fontWeight = '600';
+          wordEnDiv.style.width = '100%';
+          wordEnDiv.style.display = 'block';
+          wordDiv.appendChild(wordEnDiv);
+
+          if (wordCnDiv) {
+              wordCnDiv.style.color = cnColor;
+              wordCnDiv.style.fontFamily = "'Noto Sans TC', sans-serif"; // 設定中文使用 Noto Sans TC 字型
+              wordCnDiv.style.opacity = String(cnOpacity);
+              wordCnDiv.style.marginTop = '4px';
+              wordCnDiv.style.lineHeight = '1.2';
+              wordCnDiv.style.width = '100%';
+              wordCnDiv.style.display = 'block';
+              wordCnDiv.style.fontWeight = 'normal';
+              wordDiv.appendChild(wordCnDiv);
+          }
+
+                  // Restore original Object.assign styles for wordDiv
+          Object.assign(wordDiv.style, {
+            backgroundColor: bgColor,
+            borderLeft: borderStyle,
+                    // Explicitly reset other borders if needed
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    borderBottom: 'none',
+            boxShadow: boxShadow,
+                    textShadow: textShadow,
+                    borderRadius: '8px', // Original radius
+                    padding: '15px 20px', // Original padding
+                    textAlign: 'center',
+                    // Restore original display/layout if different (original didn't specify flex)
+                    // display: 'block', // Or whatever the original default was
+                    overflow: 'hidden',
+                    minHeight: '60px', // Original min height
+                    letterSpacing: '0.5px' // Original letter spacing
+                  });
+
+          wordsFragment.appendChild(wordDiv);
+        });
+
+        container.appendChild(wordsFragment);
+                document.body.appendChild(fragment); // Append fragment to body
+                tempContainerAppended = true; // Set flag after appending
+
+                // Restore original slight delay
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                // html2canvas call is already in its own try...catch, which is fine
+                // We keep it nested to handle its specific errors
+                try {
+        const canvas = await html2canvas(container, {
+          width: 1920,
+          height: 1080,
+          scale: 1,
+                          // Restore original backgroundColor logic (likely null or based on theme)
+                          backgroundColor: null, // Let container bg show, or use themeColors.background
+          logging: false,
+                          useCORS: true,
+                          scrollX: 0,
+                          scrollY: 0,
+                           imageTimeout: 15000,
+                           removeContainer: false // Keep container for now
+                     });
+
+        document.body.removeChild(container);
+
+                      return new Promise((resolve, reject) => {
+          canvas.toBlob((blob) => {
+                              if (blob) {
+                                 resolve(URL.createObjectURL(blob));
+                              } else {
+                                  reject(new Error('無法將 Canvas 轉換為 Blob。'));
+                              }
+          }, 'image/png');
+        });
+
+                } catch(error) {
+                     console.error(`html2canvas failed for theme ${theme}:`, error);
+                     document.body.removeChild(container);
+                     throw new Error(`生成 ${theme} 主題圖片失敗: ${error.message}`);
+                }
+            } finally {
+                 // Ensure the temporary container is always removed from the body if it was added
+                 if (tempContainerAppended && container.parentNode === document.body) {
+                      console.log(`[generateWallImageForTheme] Cleaning up temporary container for theme: ${theme}`);
+                      document.body.removeChild(container);
+                 }
+            }
+            // --- Original Implementation End ---
+      }
+
+      getThemeColorsByName(theme) {
+            // --- Original Implementation Start ---
+        const themes = {
+          rainbow: {
+            background: 'linear-gradient(135deg, #2c3e50, #1a252f)',
+                colors: ['#ff9a9e', '#fad0c4', '#a1c4fd', '#c2e9fb'], // Original colors
+            textColor: '#ffffff'
+                // No specific effects in original basic themes
+          },
+          nature: {
+            background: 'linear-gradient(135deg, #a8e6cf, #dcedc1)',
+            colors: ['#3bb78f', '#0bab64', '#2ecc71', '#27ae60'],
+                textColor: '#2c3e50', // Original text color for light themes
+                effects: { // Original effects structure
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                  // hoverEffect was likely visual only, not for canvas
+            }
+          },
+          ocean: {
+            background: 'linear-gradient(135deg, #a8d8ea, #aa96da)',
+            colors: ['#3498db', '#2980b9', '#6c5ce7', '#4834d4'],
+            textColor: '#2c3e50',
+            effects: {
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+            }
+          },
+          candy: {
+            background: 'linear-gradient(135deg, #ffd3b6, #ffaaa5)',
+                colors: ['#ff7675', '#e84393', '#fd79a8'], // Removed duplicate color
+            textColor: '#2c3e50',
+            effects: {
+              textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+            }
+          },
+              // Tech theme wasn't in the very first version, omitting for restoration
+          classic: {
+            background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+            colors: ['#6366f1', '#4f46e5', '#4338ca', '#3730a3'],
+            textColor: '#ffffff'
+                // No specific effects in original basic themes
+          }
+        };
+            // Restore original default behavior
+        return themes[theme] || themes.rainbow;
+             // --- Original Implementation End ---
+        }
+
+        // Calculates Hue from a hex color string (#RRGGBB)
+        calculateHue(hexColor) {
+            if (!hexColor || !/^#[0-9a-f]{6}$/i.test(hexColor)) return 0; // Default hue if invalid
+
+            const r = parseInt(hexColor.slice(1, 3), 16) / 255;
+            const g = parseInt(hexColor.slice(3, 5), 16) / 255;
+            const b = parseInt(hexColor.slice(5, 7), 16) / 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+            const delta = max - min;
+            let h = 0; // Default hue
+
+            if (delta === 0) { // Achromatic
+          h = 0;
+        } else if (max === r) {
+                h = 60 * (((g - b) / delta) % 6);
+        } else if (max === g) {
+                h = 60 * ((b - r) / delta + 2);
+            } else { // max === b
+                h = 60 * ((r - g) / delta + 4);
+            }
+
+            h = Math.round(h);
+            return h < 0 ? h + 360 : h; // Ensure hue is non-negative
+      }
+
+      cleanupCachedImages() {
+        Object.values(this.cachedWallImages).forEach(url => {
+                if (url && typeof url === 'string' && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+                }
+        });
+        this.cachedWallImages = {};
+      }
+
+        // --- Card Generation Logic ---
+
+         async handleCardGeneration() {
+            // console.log('[VocabExportApp] handleCardGeneration: Method called.'); // REMOVED DEBUG LOG
+            const labelInput = document.getElementById('card-label-input');
+            const generateBtn = document.getElementById('generate-cards-btn');
+            const errorElementId = 'cards-error-message';
+            const contentArea = document.getElementById('cards-content-area');
+
+            Utils.clearErrorMessage(errorElementId);
+            if (contentArea) {
+                 contentArea.innerHTML = '<p class="placeholder-text" style="text-align: center; color: var(--text-secondary); margin-top: var(--spacing-xl);">正在載入卡片資料...</p>';
+            } else {
+                // console.error('[VocabExportApp] handleCardGeneration: contentArea not found!'); // Keeping this error for now
+            }
+            if (generateBtn) generateBtn.disabled = true;
+
+            const label = labelInput ? labelInput.value.trim() : '';
+            // console.log(`[VocabExportApp] handleCardGeneration: Label entered: "${label}"`); // REMOVED DEBUG LOG
+
+            if (!label) {
+                Utils.displayErrorMessage(errorElementId, '請輸入有效的 Google Sheet 單元標籤。');
+                if (contentArea) contentArea.innerHTML = '<p class="placeholder-text error" style="text-align: center; color: var(--danger-dark); margin-top: var(--spacing-xl);">請先輸入單元標籤。</p>';
+                if (generateBtn) generateBtn.disabled = false;
+                // console.log('[VocabExportApp] handleCardGeneration: Label is empty. Aborting.'); // REMOVED DEBUG LOG
+                return;
+            }
+
+            this.lastUsedLabel = label;
+            this.ttsCache = {}; // Clear TTS cache for new label
+            // console.log('[VocabExportApp] handleCardGeneration: TTS cache cleared. Attempting to load and process card data.'); // REMOVED DEBUG LOG
+
+            try {
+                 // console.log('[VocabExportApp] handleCardGeneration: Calling await this.loadAndProcessCardData(label).'); // REMOVED DEBUG LOG
+                 await this.loadAndProcessCardData(label);
+                 // console.log('[VocabExportApp] handleCardGeneration: loadAndProcessCardData finished. Current this.vocabularyData length:', this.vocabularyData ? this.vocabularyData.length : 'undefined'); // REMOVED DEBUG LOG
+
+                 // console.log('[VocabExportApp] handleCardGeneration: Calling this.renderCards(this.vocabularyData).'); // REMOVED DEBUG LOG
+                 // alert('About to call renderCards. Check console now for its first log from renderCards.'); // REMOVED TEMPORARY ALERT
+                 this.renderCards(this.vocabularyData);
+                 // console.log('[VocabExportApp] handleCardGeneration: renderCards finished.'); // REMOVED DEBUG LOG
+
+                 this.lastCardsLabel = label;
+                 Utils.showNotification(`"${label}" 的單字卡資料已成功載入。`, 'success');
+            } catch (error) {
+                 // console.error('[VocabExportApp] handleCardGeneration: Error during load or render:', error); // Keeping this error for now
+                 Utils.displayErrorMessage(errorElementId, `處理失敗: ${error.message}`);
+                 if (contentArea) contentArea.innerHTML = `<p class="placeholder-text error" style="text-align: center; color: var(--danger-dark); margin-top: var(--spacing-xl);">無法載入卡片資料：${error.message}</p>`;
+            } finally {
+                 if (generateBtn) generateBtn.disabled = false;
+                 // console.log('[VocabExportApp] handleCardGeneration: Finally block executed. Button disabled state:', generateBtn ? generateBtn.disabled : 'N/A'); // REMOVED DEBUG LOG
+            }
+       }
+
+
+          setupCardGeneration() {
+            const generateBtn = document.getElementById('generate-cards-btn');
+            const labelInput = document.getElementById('card-label-input');
+
+            if (generateBtn) {
+                 generateBtn.addEventListener('click', Utils.debounce(this.handleCardGeneration, 300));
+            }
+            if (labelInput) {
+        labelInput.addEventListener('keypress', (e) => {
+                   if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      this.handleCardGeneration();
+                   }
+                 });
+                 // Clear error on input
+                  labelInput.addEventListener('input', () => Utils.clearErrorMessage('cards-error-message'));
+            }
+          }
+
+          // Combined data loading and processing for cards
+           async loadAndProcessCardData(label) {
+                Utils.showLoading(true, `正在從 Google Sheet 載入標籤 \"${label}\" 的卡片資料...`);
+                const errorElementId = 'cards-error-message'; // Specific error area for cards
+                Utils.clearErrorMessage(errorElementId);
+
+                try {
+                     // Reverted to the simpler export endpoint
+          const url = `https://docs.google.com/spreadsheets/d/${CONSTANTS.SPREADSHEET_ID}/export?format=csv&gid=${CONSTANTS.GID}`;
+          const response = await fetch(url);
+                     if (!response.ok) throw new Error(`無法載入試算表資料 (HTTP ${response.status})。`);
+
+          const csvText = await response.text();
+                     if (!csvText?.trim()) throw new Error('從 Google Sheet 獲取的資料為空。');
+
+                     const { data, errors } = Papa.parse(csvText, { header: false });
+                      if (errors.length > 0) console.warn("CSV 解析時發生錯誤:", errors);
+                      if (!data || data.length < 2) throw new Error('解析後的資料格式不符或沒有資料列。');
+
+                     const headerRow = data.shift() || [];
+                     if (headerRow.length === 0) throw new Error('無法讀取有效的表頭。');
+                     console.log('Fetched Header Row (loadAndProcessCardData):', headerRow); // Log the header row
+
+                     // Find label column index
+                      const labelIndex = headerRow.findIndex(h => h?.trim().toLowerCase() === 'label');
+                      if (labelIndex === -1) throw new Error('試算表中找不到 "Label" 欄位。');
+
+                      const filteredData = data.filter(row => row[labelIndex]?.trim().toLowerCase() === label.toLowerCase());
+                     if (filteredData.length === 0) throw new Error(`找不到標籤為 "${label}" 的資料。`);
+
+                     // Check if filtered data has content beyond just the label
+                      const hasContent = filteredData.some(row => row.slice(labelIndex + 1).some(cell => cell?.trim()));
+                      if (!hasContent) throw new Error(`標籤 "${label}" 的資料列似乎是空的。`);
+
+                     // Store the processed data
+                     this.vocabularyData = [headerRow, ...filteredData];
+
+        } catch (error) {
+                     console.error('載入卡片資料失敗:', error);
+                     Utils.displayErrorMessage(errorElementId, `載入卡片資料失敗：${error.message}`);
+                     throw error; // Re-throw for the caller to handle UI updates
+                } finally {
+        Utils.showLoading(false);
+                }
+      }
+
+           // Convert dataURL to Blob
+            async dataURLToBlob(dataURL) {
+                try {
+                     const response = await fetch(dataURL);
+                     if (!response.ok) {
+                         throw new Error(`Failed to fetch data URL (status: ${response.status})`);
+                     }
+                     return await response.blob();
+                } catch (error) {
+                     console.error("Error converting data URL to Blob:", error);
+                     throw error; // Re-throw the error
+                }
+      }
+
+      async downloadAllCards() {
+        const cards = document.querySelectorAll('.vocabulary-card');
+        const downloadBtn = document.getElementById('download-cards-btn');
+        const originalText = downloadBtn.innerHTML;
+        
+        downloadBtn.innerHTML = '準備下載...';
+        downloadBtn.disabled = true;
+        
+        // 創建預覽層
+        const previewLayer = document.createElement('div');
+        previewLayer.className = 'preview-layer';
+        
+        // 直接為預覽層設置樣式，不依賴CSS選擇器
+        Object.assign(previewLayer.style, {
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          zIndex: '9999',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          padding: '16px',
+          overflow: 'auto'
+        });
+        
+        // 創建控制面板
+        const controlPanel = document.createElement('div');
+        controlPanel.className = 'preview-controls';
+        
+        // 直接設置控制面板樣式
+        Object.assign(controlPanel.style, {
+          position: 'sticky',
+          top: '0',
+          width: '100%',
+          maxWidth: '1400px',
+          backgroundColor: 'rgba(30, 41, 59, 0.8)',
+          padding: '10px 16px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: '1',
+          backdropFilter: 'blur(5px)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          color: '#f8fafc'
+        });
+        
+        // 創建關閉按鈕
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn btn-secondary';
+        closeBtn.innerHTML = '<i class="fas fa-times"></i> 關閉預覽';
+        
+        // 設置關閉按鈕樣式
+        Object.assign(closeBtn.style, {
+          padding: '8px 16px',
+          backgroundColor: '#64748b',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: '500',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s ease'
+        });
+        
+        // 添加關閉按鈕懸停效果
+        closeBtn.addEventListener('mouseenter', function() {
+          this.style.backgroundColor = '#475569';
+          this.style.transform = 'translateY(-1px)';
+        });
+        
+        closeBtn.addEventListener('mouseleave', function() {
+          this.style.backgroundColor = '#64748b';
+          this.style.transform = 'translateY(0)';
+        });
+        
+        // 創建批次下載按鈕
+        const batchDownloadBtn = document.createElement('button');
+        batchDownloadBtn.className = 'btn btn-primary';
+        batchDownloadBtn.innerHTML = '<i class="fas fa-file-archive"></i> 批次下載所有圖片 (ZIP)';
+        batchDownloadBtn.style.marginRight = '10px';
+        
+        // 設置批次下載按鈕樣式
+        Object.assign(batchDownloadBtn.style, {
+          padding: '8px 16px',
+          backgroundColor: '#6366f1',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: '500',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s ease',
+          opacity: '0.7'
+        });
+        
+        batchDownloadBtn.disabled = true;
+        
+        // 添加批次下載按鈕懸停效果
+        batchDownloadBtn.addEventListener('mouseenter', function() {
+          if (!this.disabled) {
+            this.style.backgroundColor = '#4f46e5';
+            this.style.transform = 'translateY(-1px)';
+          }
+        });
+        
+        batchDownloadBtn.addEventListener('mouseleave', function() {
+          if (!this.disabled) {
+            this.style.backgroundColor = '#6366f1';
+            this.style.transform = 'translateY(0)';
+          }
+        });
+        
+        // 創建狀態文字
+        const statusText = document.createElement('div');
+        Object.assign(statusText.style, {
+          color: 'white',
+          margin: '0 15px',
+          fontSize: '16px',
+          flexGrow: '1'
+        });
+        statusText.textContent = '正在生成預覽圖片...';
+        
+        // 創建圖片預覽容器
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'preview-container';
+        
+        // 直接設置預覽容器樣式
+        Object.assign(previewContainer.style, {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: '16px',
+          width: '100%',
+          maxWidth: '1400px',
+          padding: '0'
+        });
+        
+        // 控制面板佈局
+        controlPanel.appendChild(statusText);
+        controlPanel.appendChild(batchDownloadBtn);
+        controlPanel.appendChild(closeBtn);
+        
+        previewLayer.appendChild(controlPanel);
+        previewLayer.appendChild(previewContainer);
+        
+        // 設置預覽層關閉函數
+        closeBtn.onclick = () => {
+          console.log('關閉卡片預覽層，開始釋放 Blob URLs'); // DEBUG: Log close action
+          // 遍歷預覽容器中的所有下載連結並釋放其 Blob URL
+          const downloadLinks = previewContainer.querySelectorAll('.preview-download');
+          downloadLinks.forEach(link => {
+            if (link.href && link.href.startsWith('blob:')) {
+              console.log('釋放 Blob URL:', link.href); // DEBUG: Log revoked URL
+              URL.revokeObjectURL(link.href);
+            }
+          });
+          document.body.removeChild(previewLayer);
+        };
+        
+        // 將預覽層添加到document.body
+        document.body.appendChild(previewLayer);
+        
+        // 動態加載 JSZip 庫
+        await this.loadJSZip();
+        
+        // 存儲所有圖片數據的數組
+        const imageDataArray = [];
+        const BATCH_SIZE = 5; // 每批處理的卡片數量
+
+        try {
+          // 準備批次處理
+          const totalCards = cards.length;
+          const batches = Math.ceil(totalCards / BATCH_SIZE);
+          
+          for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
+            const startIndex = batchIndex * BATCH_SIZE;
+            const endIndex = Math.min(startIndex + BATCH_SIZE, totalCards);
+            const batchPromises = [];
+            
+            statusText.textContent = `正在處理第 ${startIndex + 1}-${endIndex}/${totalCards} 張卡片...`;
+            
+            for (let i = startIndex; i < endIndex; i++) {
+              const card = cards[i];
+              batchPromises.push(this.processCard(card, i, totalCards));
+            }
+            
+            // 等待當前批次中所有卡片處理完成
+            const batchResults = await Promise.all(batchPromises);
+            
+            // 處理每個卡片的結果
+            batchResults.forEach(result => {
+              if (result) {
+                const { imgDataUrl, blob, name, previewElement } = result;
+                imageDataArray.push({ name, data: blob });
+                previewContainer.appendChild(previewElement);
+              }
+            });
+            
+            // 小暫停使UI可以更新
+            await new Promise(resolve => setTimeout(resolve, 10));
+          }
+          
+          // 啟用批次下載按鈕
+          batchDownloadBtn.disabled = false;
+          batchDownloadBtn.style.opacity = '1';
+          batchDownloadBtn.onclick = () => this.downloadZipFile(imageDataArray);
+          
+          statusText.textContent = `已完成所有 ${cards.length} 張卡片的處理。您可以單獨下載卡片或使用 ZIP 批次下載所有卡片。`;
+          
+        } catch (error) {
+          console.error('生成圖片失敗:', error);
+          statusText.textContent = `處理過程中發生錯誤: ${error.message}`;
+        } finally {
+          // 恢復按鈕文字和狀態
+          downloadBtn.innerHTML = originalText;
+          downloadBtn.disabled = false;
+        }
+      }
+      
+      // 單獨處理每張卡片的函數
+      async processCard(card, index, totalCards) {
+        try {
+          // 創建一個新的容器來調整卡片大小
+          const container = document.createElement('div');
+          Object.assign(container.style, {
+            width: '1920px',
+            height: '1080px',
+            position: 'fixed',
+            top: '-9999px',
+            left: '-9999px',
+            backgroundColor: '#121212',
+            padding: '0',
+            boxSizing: 'border-box',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden'
+          });
+          
+          // 複製卡片內容
+          const cardClone = card.cloneNode(true);
+          Object.assign(cardClone.style, {
+            width: '96%',
+            height: '96%',
+            margin: '0',
+            padding: '30px 60px 60px 60px', // 將頂部填充從50px減少至30px，縮小標題上方空白
+            boxSizing: 'border-box',
+            fontSize: '50px', 
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            borderRadius: '20px',
+            boxShadow: '0 0 50px rgba(0,0,0,0.4)',
+            background: 'linear-gradient(to bottom right, #0f172a, #1e293b)',
+            color: '#e2e8f0',
+            position: 'relative'
+          });
+          
+          // 調整卡片內部元素的樣式
+          this.styleCardElements(cardClone);
+          
+          // 添加裝飾元素
+          this.addCardDecorations(cardClone);
+          
+          // 確保容器附加到body
+          container.appendChild(cardClone);
+          document.body.appendChild(container);
+          
+          // 計算需要補零的位數
+          const totalDigits = Math.max(2, Math.ceil(Math.log10(totalCards + 1)));
+          const paddedIndex = String(index + 1).padStart(totalDigits, '0');
+          
+          // 從卡片標題獲取英文單字
+          const cardTitle = cardClone.querySelector('h3');
+          const englishWord = cardTitle ? cardTitle.textContent.trim().replace(/[^a-z0-9_\-]/gi, '_').substring(0, 30) : `card_${index + 1}`;
+          const fileName = `#${paddedIndex}_${englishWord}.png`;
+          
+          // 使用 html2canvas 轉換為圖片
+          const canvas = await html2canvas(container, {
+            scale: 1.5, // MODIFIED: Reduced scale from 2 to 1.5
+            backgroundColor: 'white',
+            logging: false,
+            width: 1920,
+            height: 1080,
+            useCORS: true,
+            allowTaint: true,
+            removeContainer: false
+          });
+          
+          // 確保畫布尺寸正確
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = 1920;
+          tempCanvas.height = 1080;
+          const ctx = tempCanvas.getContext('2d');
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, 1920, 1080);
+          ctx.drawImage(canvas, 0, 0, 1920, 1080);
+          
+          // 生成預覽圖片和數據
+          const imgDataUrl = tempCanvas.toDataURL('image/png');
+          const blob = await this.dataURLToBlob(imgDataUrl);
+          
+          // 創建預覽卡片元素
+          const previewElement = this.createPreviewElement(imgDataUrl, blob, fileName, index);
+          
+          // 清理資源
+          document.body.removeChild(container);
+          
+          // 增加一個短暫的延遲，讓瀏覽器有機會處理其他事務
+          await new Promise(resolve => setTimeout(resolve, 0)); 
+
+          // 釋放記憶體
+          canvas.width = 0;
+          canvas.height = 0;
+          tempCanvas.width = 0;
+          tempCanvas.height = 0;
+          
+          return { imgDataUrl, blob, name: fileName, previewElement };
+        } catch (error) {
+          console.error(`處理卡片 ${index + 1} 時發生錯誤:`, error);
+          return null;
+        }
+      }
+      
+      // 給卡片元素添加樣式
+      styleCardElements(cardClone) {
+        // 添加基本字型設定到卡片本身
+        cardClone.style.fontFamily = "'Noto Sans TC', Arial, sans-serif";
+        
+        // 調整標題樣式
+        const title = cardClone.querySelector('h3');
+        if (title) {
+          Object.assign(title.style, {
+            fontSize: '120px',
+            color: '#38bdf8',
+            borderBottom: '4px solid rgba(59, 130, 246, 0.3)',
+            paddingBottom: '10px',
+            marginBottom: '50px', // 將標題下方邊距從15px增加到30px
+            marginTop: '0',
+            fontWeight: 'bold',
+            letterSpacing: '1px',
+            textShadow: '0 2px 10px rgba(59, 130, 246, 0.3)',
+            fontFamily: "'Arial', sans-serif"
+          });
+        }
+        
+        // 查找音標、中譯和例句元素
+        const items = cardClone.querySelectorAll('.vocabulary-item');
+        items.forEach(item => {
+          // 檢查元素是否包含特定文本來識別音標和中譯
+          const strongText = item.querySelector('strong')?.textContent?.trim().toLowerCase() || '';
+          const isPhoneticsItem = strongText.includes('音標');
+          const isTranslationItem = strongText.includes('中譯');
+          
+          if (isPhoneticsItem) {
+            // 音標元素
+            Object.assign(item.style, {
+              margin: '35px 0 15px 0', // 調整音標上下邊距
+              fontSize: '80px'
+            });
+          } else if (isTranslationItem) {
+            // 中譯元素
+            Object.assign(item.style, {
+              margin: '15px 0 35px 0', // 增加中譯下方邊距至35px
+              fontSize: '80px'
+            });
+          } else {
+            // 其他元素保持原樣
+            Object.assign(item.style, {
+              margin: '8px 0',
+              fontSize: '80px'
+            });
+          }
+          
+          const strong = item.querySelector('strong');
+          if (strong) {
+            Object.assign(strong.style, {
+              color: '#64748b',
+              fontWeight: '500',
+              display: 'inline-block',
+              width: '180px',
+              opacity: '0.75',
+              fontSize: '52px', // 原本 42px，調整為 52px
+              verticalAlign: 'middle',
+              fontFamily: "'Noto Sans TC', sans-serif" // 確保中文標籤使用 Noto Sans TC 字型
+            });
+          }
+          
+          // 處理音標和中譯文字 (除了標籤外的文字內容)
+          const textContent = item.querySelector('span:not(strong)');
+          if (textContent) {
+            // 根據內容類型選擇字型
+            if (item.classList.contains('phonetic')) {
+              textContent.style.fontFamily = "'Arial', sans-serif"; // 音標使用 Arial
+            } else if (item.classList.contains('translation')) {
+              textContent.style.fontFamily = "'Noto Sans TC', sans-serif"; // 中文翻譯使用 Noto Sans TC
+            }
+          }
+        });
+        
+        // 查找例句和翻譯
+        const example = cardClone.querySelector('.example');
+        if (example) {
+          Object.assign(example.style, {
+            margin: '50px 0 30px 0', // 降低例句的頂部邊距，因為中譯已經有較大的下方間距
+            padding: '25px',
+            borderLeft: '8px solid rgba(59, 130, 246, 0.4)',
+            borderRadius: '0 15px 15px 0',
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(10px)'
+          });
+          
+          // 例句文本
+          const exampleTexts = example.children;
+          if (exampleTexts.length > 0) {
+            // 英文例句
+            Object.assign(exampleTexts[0].style, {
+              fontSize: '70px', // 原本 56px，調整為 70px
+              lineHeight: '1.4',
+              marginBottom: '15px',
+              fontStyle: 'italic',
+              color: '#cbd5e1',
+              fontFamily: "'Arial', sans-serif" // 英文例句使用 Arial 字型
+            });
+            
+            // 強調標記的單詞
+            const highlightSpan = exampleTexts[0].querySelector('.highlight');
+            if (highlightSpan) {
+              Object.assign(highlightSpan.style, {
+                backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                color: '#38bdf8',
+                padding: '0 8px',
+                borderRadius: '6px',
+                fontWeight: 'bold',
+                textDecoration: 'none',
+                textShadow: '0 0 8px rgba(56, 189, 248, 0.4)',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 0 15px rgba(56, 189, 248, 0.3)',
+                fontFamily: "'Arial', sans-serif" // 確保高亮單詞也使用 Arial 字型
+              });
+            }
+            
+            // 例句翻譯
+            if (exampleTexts.length > 1) {
+              Object.assign(exampleTexts[1].style, {
+                fontSize: '65px', // 原本 52px，調整為 65px
+                color: '#94a3b8',
+                fontWeight: '500',
+                opacity: '0.85',
+                fontFamily: "'Noto Sans TC', sans-serif" // 中文翻譯使用 Noto Sans TC 字型
+              });
+            }
+          }
+        }
+      }
+      
+      // 添加卡片的裝飾元素
+      addCardDecorations(cardClone) {
+        // 添加發光裝飾元素
+        const decoration = document.createElement('div');
+        Object.assign(decoration.style, {
+          position: 'absolute',
+          top: '0',
+          right: '0',
+          width: '250px',
+          height: '250px',
+          background: 'radial-gradient(circle at top right, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0) 70%)',
+          zIndex: '0'
+        });
+        cardClone.appendChild(decoration);
+        
+        // 添加左下角裝飾
+        const decoration2 = document.createElement('div');
+        Object.assign(decoration2.style, {
+          position: 'absolute',
+          bottom: '0',
+          left: '0',
+          width: '200px',
+          height: '200px',
+          background: 'radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0) 70%)',
+          zIndex: '0'
+        });
+        cardClone.appendChild(decoration2);
+        
+        // 添加卡片底部署名
+        const footer = document.createElement('div');
+        Object.assign(footer.style, {
+          position: 'absolute',
+          bottom: '30px', // 改為距離底部30px
+          right: '40px',
+          fontSize: '24px',
+          color: 'rgba(100, 116, 139, 0.5)',
+          fontFamily: "'Noto Sans TC', 'Arial', sans-serif",
+          letterSpacing: '1px'
+        });
+        footer.innerHTML = 'Junyi Academy 均一教育平台';
+        cardClone.appendChild(footer);
+        
+        // 添加微妙的光斑效果
+        const lightEffect = document.createElement('div');
+        Object.assign(lightEffect.style, {
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '800px',
+          height: '800px',
+          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.03) 0%, rgba(0, 0, 0, 0) 70%)',
+          zIndex: '0',
+          pointerEvents: 'none'
+        });
+        cardClone.appendChild(lightEffect);
+      }
+      
+      // 創建預覽卡片元素
+      createPreviewElement(imgDataUrl, blob, fileName, index) {
+        // 創建預覽卡片
+        const imgPreview = document.createElement('div');
+        imgPreview.className = 'preview-card';
+        
+        // 直接設置預覽卡片樣式
+        Object.assign(imgPreview.style, {
+          position: 'relative',
+          background: '#ffffff',
+          borderRadius: '8px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          overflow: 'hidden',
+          transition: 'all 0.2s ease',
+          border: '1px solid #e2e8f0',
+          fontFamily: "'Noto Sans TC', Arial, sans-serif" // 添加基本字型設定
+        });
+        
+        // 預覽圖片
+        const img = document.createElement('img');
+        img.src = imgDataUrl;
+        Object.assign(img.style, {
+          width: '100%',
+          height: 'auto',
+          display: 'block'
+        });
+        imgPreview.appendChild(img);
+        
+        // 圖片信息覆蓋層
+        const overlay = document.createElement('div');
+        overlay.className = 'preview-overlay';
+        overlay.textContent = `卡片 ${index + 1}`;
+        
+        // 直接設置覆蓋層樣式
+        Object.assign(overlay.style, {
+          position: 'absolute',
+          bottom: '0',
+          left: '0',
+          right: '0',
+          background: 'linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent)',
+          color: '#f8fafc',
+          padding: '16px 8px',
+          paddingTop: '40px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          opacity: '0',
+          transition: 'opacity 0.2s ease',
+          fontSize: '14px',
+          fontWeight: '500',
+          fontFamily: "'Noto Sans TC', Arial, sans-serif" // 添加基本字型設定
+        });
+        
+        // 設置鼠標懸停顯示覆蓋層
+        imgPreview.addEventListener('mouseenter', function() {
+          overlay.style.opacity = '1';
+        });
+        
+        imgPreview.addEventListener('mouseleave', function() {
+          overlay.style.opacity = '0';
+        });
+        
+        // 添加下載按鈕
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = fileName;
+        downloadLink.innerHTML = '<i class="fas fa-download"></i>';
+        downloadLink.className = 'preview-download';
+        
+        // 直接設置下載按鈕樣式
+        Object.assign(downloadLink.style, {
+          color: '#f8fafc',
+          background: 'rgba(255, 255, 255, 0.2)',
+          borderRadius: '50%',
+          width: '32px',
+          height: '32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s ease',
+          textDecoration: 'none',
+          flexShrink: '0'
+        });
+        
+        // 設置下載按鈕懸停效果
+        downloadLink.addEventListener('mouseenter', function() {
+          this.style.background = 'rgba(255, 255, 255, 0.4)';
+          this.style.transform = 'scale(1.1)';
+        });
+        
+        downloadLink.addEventListener('mouseleave', function() {
+          this.style.background = 'rgba(255, 255, 255, 0.2)';
+          this.style.transform = 'scale(1.0)';
+        });
+        
+        // 釋放資源
+        downloadLink.addEventListener('click', function() {
+          setTimeout(() => {
+            URL.revokeObjectURL(this.href);
+          }, 100);
+        });
+        
+        overlay.appendChild(downloadLink);
+        imgPreview.appendChild(overlay);
+        
+        // 添加懸停效果
+        imgPreview.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-5px)';
+          this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.4)';
+        });
+        
+        imgPreview.addEventListener('mouseout', function() {
+          this.style.transform = 'translateY(0)';
+          this.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+        });
+        
+        return imgPreview;
+      }
+
+      async loadJSZip() {
+        return new Promise((resolve, reject) => {
+          if (window.JSZip) {
+            resolve(window.JSZip);
+            return;
+          }
+          
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+          script.onload = () => resolve(window.JSZip);
+          script.onerror = () => reject(new Error('無法載入 JSZip 庫'));
+          document.head.appendChild(script);
+        });
+      }
+
+      async dataURLToBlob(dataURL) {
+        const res = await fetch(dataURL);
+        return await res.blob();
+      }
+
+      async downloadZipFile(imageDataArray) {
+        try {
+          const zip = new JSZip();
+          
+          imageDataArray.forEach(item => {
+            zip.file(item.name, item.data);
+          });
+          
+          const content = await zip.generateAsync({
+            type: 'blob',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 }
+          });
+          
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(content);
+          const zipFileName = `VocabCards_${this.lastCardsLabel || 'Export'}.zip`; // UPDATED FILENAME LOGIC
+          link.download = zipFileName; 
+          link.click();
+          
+          setTimeout(() => {
+            URL.revokeObjectURL(link.href);
+          }, 100);
+          
+        } catch (error) {
+          console.error('創建 ZIP 文件失敗:', error);
+          alert('批次下載失敗: ' + error.message);
+        }
+      }
+
+      // ADDED: Method to fetch all unique labels from the sheet
+      async fetchAllSheetLabels() {
+          // Optional: Show a subtle loading state, e.g., disable inputs briefly
+          // const labelInput = document.getElementById('label-input');
+          // const cardLabelInput = document.getElementById('card-label-input');
+          // if (labelInput) labelInput.disabled = true;
+          // if (cardLabelInput) cardLabelInput.disabled = true;
+          // Utils.showNotification('正在載入標籤建議...', 'info'); // Optional notification
+
+          try {
+              const url = `https://docs.google.com/spreadsheets/d/${CONSTANTS.SPREADSHEET_ID}/export?format=csv&gid=${CONSTANTS.GID}`;
+              const response = await fetch(url);
+              if (!response.ok) {
+                  throw new Error(`無法載入試算表標籤資料 (HTTP ${response.status})。`);
+              }
+
+              const csvText = await response.text();
+              if (!csvText?.trim()) {
+                  throw new Error('從 Google Sheet 獲取的標籤資料為空。');
+              }
+
+              const { data, errors } = Papa.parse(csvText, { header: false });
+
+              if (errors.length > 0) {
+                  console.warn("CSV 解析時發生錯誤 (Labels):", errors);
+              }
+
+              if (!data || data.length === 0) {
+                  throw new Error('解析後的標籤資料為空或格式不符。');
+              }
+
+              // Extract labels from the first column (index 0), skipping potential header if desired
+              const labels = data
+                  // .slice(1) // Uncomment this line if the first row is always a header you want to skip
+                  .map(row => row[0]?.trim()) // Get first column and trim
+                  .filter(Boolean); // Filter out empty strings/null/undefined
+
+              this.availableSheetLabels = [...new Set(labels)]; // Store unique labels
+              this.availableSheetLabels.sort(); // Sort alphabetically for better UX
+
+              console.log('Fetched unique labels:', this.availableSheetLabels); // For debugging
+              this.populateLabelDatalist(); // Populate the datalist element
+
+          } catch (error) {
+              console.error('載入 Google Sheet 標籤失敗:', error);
+              Utils.showNotification(`無法載入標籤建議列表: ${error.message}`, 'error');
+              // Keep inputs enabled even if fetching fails, datalist will just be empty
+          } finally {
+              // Re-enable inputs if they were disabled
+              // if (labelInput) labelInput.disabled = false;
+              // if (cardLabelInput) cardLabelInput.disabled = false;
+          }
+      }
+
+      // ADDED: Method to populate the datalist element with labels
+      populateLabelDatalist() {
+          const datalistElement = document.getElementById('sheet-labels-datalist');
+          if (!datalistElement) {
+              console.error('找不到 Datalist 元素 (#sheet-labels-datalist)');
+              return;
+          }
+
+          // Clear existing options before adding new ones
+          datalistElement.innerHTML = '';
+
+          const fragment = document.createDocumentFragment();
+          this.availableSheetLabels.forEach(label => {
+              const option = document.createElement('option');
+              option.value = label;
+              // You could add option.textContent = label; if needed, but value is sufficient for datalist
+              fragment.appendChild(option);
+          });
+
+          datalistElement.appendChild(fragment);
+          console.log(`Datalist populated with ${this.availableSheetLabels.length} labels.`);
+      }
+
+      getXsrfToken() {
+        const match = document.cookie.match(/fkey=([^;]*)/);
+        return match ? match[1] : null;
+      }
+
+      convertFloat32ToInt16(buffer) {
+        const out = new Int16Array(buffer.length);
+        for (let i = 0; i < buffer.length; i++) {
+          let s = Math.max(-1, Math.min(1, buffer[i]));
+          s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          out[i] = s;
+        }
+        return out;
+      }
+
+      audioBufferToMp3(buffer) {
+        if (typeof lamejs === 'undefined') {
+          console.error('lamejs library is not loaded.');
+          Utils.showNotification('MP3 編碼器未載入，無法生成音檔。', 'error');
+          throw new Error('lamejs library not loaded.');
+        }
+        const encoder = new lamejs.Mp3Encoder(buffer.numberOfChannels, buffer.sampleRate, this.mp3Bitrate);
+        const data = [];
+        const blockSize = 1152;
+        const channelData = [
+          buffer.getChannelData(0),
+          buffer.numberOfChannels === 2 ? buffer.getChannelData(1) : buffer.getChannelData(0) // Ensure stereo for encoder
+        ];
+
+        let mp3buf;
+        for (let i = 0; i < channelData[0].length; i += blockSize) {
+          const leftChunk = this.convertFloat32ToInt16(channelData[0].subarray(i, i + blockSize));
+          const rightChunk = this.convertFloat32ToInt16(channelData[1].subarray(i, i + blockSize));
+          mp3buf = encoder.encodeBuffer(leftChunk, rightChunk);
+          if (mp3buf.length) data.push(new Int8Array(mp3buf));
+        }
+        mp3buf = encoder.flush();
+        if (mp3buf.length) data.push(new Int8Array(mp3buf));
+        return new Blob(data, { type: 'audio/mp3' });
+      }
+
+      async generateAudioSegment(text, voice) {
+        if (!text || !text.trim()) {
+          // console.warn('generateAudioSegment called with empty text.');
+          return null; // Return null or an empty AudioBuffer representation
+        }
+        const cacheKey = `${text}_${voice}`;
+        if (this.ttsCache[cacheKey]) {
+          return this.ttsCache[cacheKey];
+        }
+
+        const xsrfToken = this.getXsrfToken();
+        if (!xsrfToken) {
+          Utils.showNotification('無法取得授權，請嘗試重新整理頁面或重新登入均一平台。', 'error');
+          console.error('XSRF token (fkey) not found in cookie.');
+          return null;
+        }
+
+        try {
+          const response = await fetch("/api/v2/external/jutor/tts", { // UPDATED ENDPOINT
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-KA-FKey": xsrfToken
+            },
+            body: JSON.stringify({
+              text,
+              "lang": voice.slice(0, 5), // e.g., "en-US"
+              voice_name: voice,
+              format: "mp3" // Requesting MP3 format
+            })
+          });
+
+          if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+              Utils.showNotification('語音合成服務授權失敗，請確認您已登入均一平台帳號。', 'error');
+              console.error(`TTS API request failed with status ${response.status}. User might not be logged in or authorized.`);
+            } else {
+              Utils.showNotification(`語音合成失敗 (HTTP ${response.status})。`, 'error');
+              console.error(`TTS API request failed with status ${response.status}.`);
+            }
+            return null;
+          }
+
+          const result = await response.json();
+          if (result.data && result.data.audio_data) {
+            const audioSrc = `data:audio/mp3;base64,${result.data.audio_data}`;
+            this.ttsCache[cacheKey] = audioSrc; // Cache the base64 string
+            return audioSrc;
+          } else {
+            Utils.showNotification('語音合成服務未返回有效音訊資料。', 'error');
+            console.error('TTS API did not return valid audio_data.', result);
+            return null;
+          }
+        } catch (error) {
+          Utils.showNotification('請求語音合成服務時發生網路錯誤。', 'error');
+          console.error("Error fetching TTS data:", error);
+          return null;
+        }
+      }
+
+      async generateCombinedAudio(vocab, sentence) {
+        // Vocab (Male), Silence 1s, Vocab (Female), Silence 1.5s, Sentence (Male), Silence 1s, Sentence (Female), Silence 1.5s
+        const maleVoice = "en-US-ChristopherNeural"; // Fixed male voice
+        const femaleVoice = "en-US-NancyNeural";   // Fixed female voice
+
+        Utils.showLoading(true, '合成混合音檔...');
+
+        const segments = [
+          { text: vocab, voice: maleVoice },
+          { duration: this.silenceDuration1 },
+          { text: vocab, voice: femaleVoice },
+          { duration: this.silenceDuration1_5 },
+          { text: sentence, voice: maleVoice },
+          { duration: this.silenceDuration1 },
+          { text: sentence, voice: femaleVoice },
+          { duration: this.silenceDuration1_5 }
+        ];
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioSources = [];
+
+        for (const segment of segments) {
+          if (segment.text) {
+            const base64Audio = await this.generateAudioSegment(segment.text, segment.voice);
+            if (!base64Audio) {
+              Utils.showNotification(`無法生成 "${segment.text}" 的音檔片段。`, 'error');
+              Utils.showLoading(false);
+              return null; // Stop if any segment fails
+            }
+            try {
+              const response = await fetch(base64Audio);
+              const arrayBuffer = await response.arrayBuffer();
+              const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+              audioSources.push(decodedBuffer);
+            } catch (e) {
+               Utils.showNotification(`解碼音檔片段 "${segment.text}" 失敗。`, 'error');
+               console.error(`Error decoding audio segment for "${segment.text}":`, e);
+               Utils.showLoading(false);
+               return null;
+            }
+          } else if (segment.duration) {
+            // Create silence buffer
+            const frameCount = audioCtx.sampleRate * segment.duration;
+            const silenceBuffer = audioCtx.createBuffer(2, frameCount, audioCtx.sampleRate);
+            // Fill with 0s (silence) - it's already like this by default
+            audioSources.push(silenceBuffer);
+          }
+        }
+        
+        if (audioSources.some(s => s === null)) {
+            Utils.showNotification('部分音檔片段生成失敗，無法合併。', 'error');
+            Utils.showLoading(false);
+            return null;
+        }
+        if (audioSources.length === 0) {
+            Utils.showNotification('沒有可合併的音檔片段。', 'info');
+            Utils.showLoading(false);
+            return null;
+        }
+
+
+        // Calculate total length and create output buffer
+        let totalLength = 0;
+        audioSources.forEach(buffer => {
+          if (buffer) totalLength += buffer.length;
+        });
+        
+        if (totalLength === 0) {
+            Utils.showNotification('計算的總音檔長度為0，無法合併。', 'error');
+            Utils.showLoading(false);
+            return null;
+        }
+
+        const outputBuffer = audioCtx.createBuffer(
+          Math.max(...audioSources.map(s => s ? s.numberOfChannels : 1)), // Use max channels, default to 1 if null
+          totalLength,
+          audioCtx.sampleRate
+        );
+
+        let offset = 0;
+        audioSources.forEach(buffer => {
+          if (buffer) {
+            for (let channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
+              const channelData = buffer.getChannelData(Math.min(channel, buffer.numberOfChannels - 1));
+              outputBuffer.getChannelData(channel).set(channelData, offset);
+            }
+            offset += buffer.length;
+          }
+        });
+        
+        Utils.showLoading(false);
+        const mp3Blob = this.audioBufferToMp3(outputBuffer);
+        return URL.createObjectURL(mp3Blob);
+      }
+
+
+      async downloadAllVocabAudios() {
+        const downloadBtn = document.getElementById('download-all-audios-btn');
+        const originalBtnText = downloadBtn.innerHTML;
+        
+        if (!this.vocabularyData || this.vocabularyData.length < 2) {
+          Utils.showNotification('沒有載入單字資料可供下載音檔。', 'info');
+          return;
+        }
+
+        const header = this.vocabularyData[0];
+        const dataRows = this.vocabularyData.slice(1).filter(row => row.some(cell => cell && cell.trim()));
+
+        if (dataRows.length === 0) {
+          Utils.showNotification('沒有有效的單字資料可供下載音檔。', 'info');
+          return;
+        }
+
+        const findIndex = (name) => header.findIndex(h => h?.trim().toLowerCase() === name.toLowerCase());
+        const englishIndex = findIndex('英文');
+        const exampleIndex = findIndex('例句');
+
+        if (englishIndex === -1) {
+          Utils.showNotification('資料中缺少 "英文" 欄位，無法生成檔名。', 'error');
+          return;
+        }
+
+        downloadBtn.disabled = true;
+        const audioFilesToZip = [];
+        const totalFiles = dataRows.length;
+        const digits = Math.max(2, totalFiles.toString().length);
+
+        Utils.showNotification(`開始準備 ${totalFiles} 個音檔...`, 'info');
+
+        for (let i = 0; i < totalFiles; i++) {
+          const row = dataRows[i];
+          const englishWord = row[englishIndex]?.trim() || `word_${i + 1}`;
+          const exampleSentence = exampleIndex > -1 ? (row[exampleIndex]?.trim() || '') : '';
+          
+          downloadBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 準備音檔 (${i + 1}/${totalFiles})`;
+
+          if (!englishWord && !exampleSentence) {
+              console.warn(`Skipping row ${i+1} due to empty English word and example sentence.`);
+              continue;
+          }
+
+          try {
+            const audioUrl = await this.generateCombinedAudio(englishWord, exampleSentence); // This returns a Blob URL
+            if (audioUrl) {
+              const response = await fetch(audioUrl);
+              const audioBlob = await response.blob();
+              URL.revokeObjectURL(audioUrl); // Revoke Blob URL after fetching the blob
+
+              const fileNameNumber = (i + 1).toString().padStart(digits, '0');
+              const safeEnglishWord = englishWord.replace(/[^a-z0-9_\-]/gi, '_').substring(0, 50);
+              const fileName = `#${fileNameNumber}_${safeEnglishWord}.mp3`;
+              
+              audioFilesToZip.push({ name: fileName, data: audioBlob });
+            } else {
+              Utils.showNotification(`無法生成 "${englishWord}" 的混合音檔。`, 'error');
+            }
+          } catch (error) {
+            console.error(`Error generating or fetching audio blob for "${englishWord}":`, error);
+            Utils.showNotification(`處理 "${englishWord}" 音檔時出錯。`, 'error');
+          }
+        }
+
+        if (audioFilesToZip.length > 0) {
+          try {
+            downloadBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> 正在壓縮 ${audioFilesToZip.length} 個音檔...`;
+            const zip = new JSZip();
+            audioFilesToZip.forEach(file => {
+              zip.file(file.name, file.data);
+            });
+
+            const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+            
+            downloadBtn.innerHTML = `<i class="fas fa-download"></i> 下載ZIP檔案`;
+            
+            const zipFileName = `VocabAudios_${this.lastCardsLabel || 'Export'}.zip`;
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(zipBlob);
+            link.download = zipFileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+            Utils.showNotification(`已成功將 ${audioFilesToZip.length} 個音檔打包為 ${zipFileName} 並開始下載。`, 'success');
+          } catch (error) {
+            console.error('Error creating or downloading ZIP file:', error);
+            Utils.showNotification('創建或下載 ZIP 檔案時出錯。', 'error');
+          }
+        } else if (totalFiles > 0) {
+          Utils.showNotification('未能成功準備任何音檔進行壓縮。請檢查控制台錯誤。', 'error');
+        } else {
+          // This case should ideally not be reached if initial checks are correct
+          Utils.showNotification('沒有音檔可供處理。', 'info'); 
+        }
+
+        downloadBtn.innerHTML = originalBtnText;
+        downloadBtn.disabled = false;
+      }
+
+       } // End of VocabExportApp class
+
+       // Initialize the application
+       document.addEventListener('DOMContentLoaded', () => {
+         window.vocabApp = new VocabExportApp(); // Assign to window for easier debugging if needed
+       });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const visited = localStorage.getItem('vocabexport-usage-visited');
+      const initiallyOpen = !visited;
+      if (!visited) {
+        localStorage.setItem('vocabexport-usage-visited', 'true');
+      }
+      document.querySelectorAll('.usage-steps').forEach(section => {
+        const header = section.querySelector('h2.usage-toggle');
+        const content = section.querySelector('.steps');
+        const icon = header.querySelector('i.fas');
+        if (!initiallyOpen) {
+          content.style.display = 'none';
+          icon.classList.replace('fa-chevron-down', 'fa-chevron-right');
+        }
+        header.addEventListener('click', () => {
+          const isHidden = content.style.display === 'none';
+          if (isHidden) {
+            content.style.display = '';
+            icon.classList.replace('fa-chevron-right', 'fa-chevron-down');
+          } else {
+            content.style.display = 'none';
+            icon.classList.replace('fa-chevron-down', 'fa-chevron-right');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html> 

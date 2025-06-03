@@ -1,0 +1,2552 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字彙謎題｜VocabPuzzle</title>
+    <!-- 添加 Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- 添加 Papa Parse 用於解析 CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        /* 設定 rem 基準值 */
+        html {
+            font-size: 16px; /* 1rem = 16px，您可以調整此值 */
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif; /* Added Noto Sans TC for better Chinese character rendering */
+            overscroll-behavior: none; /* Prevents pull-to-refresh on mobile */
+            background-color: #f5f7fa;
+            color: #1e293b; /* 文字顏色 */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 選取效果 */
+        ::selection {
+            background-color: #7dd3fc;
+            color: #0c4a6e;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1400px; /* 增加最大寬度以容納謎題網格 */
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .content-wrapper {
+            padding: 24px 32px;
+        }
+
+        .grid-cell {
+            width: 30px; /* Fixed width for cells */
+            height: 30px; /* Fixed height for cells */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: none; /* 移除所有邊框 */
+            background-color: #f8fafc; /* 淺灰背景 */
+            font-size: 1rem;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            position: relative;
+            color: #1e293b; /* 確保文字顏色 */
+            z-index: 1; /* 確保文字在上層 */
+        }
+        .grid-cell::after {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            background-color: white;
+            transition: all 0.2s ease;
+            z-index: -1; /* 背景在文字下方 */
+        }
+        .grid-cell:hover::after {
+            background-color: #f1f5f9;
+        }
+        .grid-cell.selected {
+            background-color: #60a5fa; /* Tailwind blue-400 */
+            color: white;
+            z-index: 2;
+        }
+        
+        .grid-cell.selected::after {
+            background-color: transparent;
+        }
+        
+        .grid-cell.first-click {
+            background-color: #f59e0b; /* Tailwind amber-500 */
+            color: white;
+            animation: pulse 1s infinite;
+            z-index: 2;
+        }
+        
+        .grid-cell.first-click::after {
+            background-color: transparent;
+        }
+        
+        .grid-cell.potential {
+            background-color: #fef3c7; /* Tailwind amber-100 */
+        }
+        
+        .grid-cell.potential::after {
+            background-color: #fbbf24; /* Tailwind amber-400 */
+        }
+        
+        .grid-cell.found {
+            background-color: #34d399; /* Tailwind green-400 */
+            color: white;
+            z-index: 2;
+        }
+        
+        .grid-cell.found::after {
+            background-color: transparent;
+        }
+        .word-list-item.found {
+            text-decoration: line-through;
+            color: #9ca3af; /* Tailwind gray-400 */
+        }
+        .word-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: white;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .word-item.found {
+            text-decoration: line-through;
+            background-color: #f0fdf4; /* Tailwind green-50 */
+            border-color: #34d399; /* Tailwind green-400 */
+        }
+        .word-english {
+            font-weight: bold;
+            color: #1e293b; /* Tailwind slate-800 */
+            font-size: 0.875rem;
+            margin-bottom: 2px;
+        }
+        .word-chinese {
+            font-size: 0.75rem;
+            color: #64748b; /* Tailwind slate-500 */
+            line-height: 1.2;
+        }
+        /* Custom scrollbar for word list if it overflows */
+        .word-list-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .word-list-container::-webkit-scrollbar-track {
+            background: #f1f5f9; /* Tailwind slate-100 */
+            border-radius: 10px;
+        }
+        .word-list-container::-webkit-scrollbar-thumb {
+            background: #94a3b8; /* Tailwind slate-400 */
+            border-radius: 10px;
+        }
+        .word-list-container::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* Tailwind slate-500 */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            #puzzleGrid {
+                max-height: 60vh;
+            }
+            
+            .word-list-container {
+                max-height: 40vh;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .grid-cell {
+                font-size: 0.75rem;
+                font-weight: 600;
+            }
+            
+            .word-list-container {
+                max-height: 35vh;
+            }
+            
+            .word-item {
+                padding: 6px 8px;
+            }
+            
+            .word-english {
+                font-size: 0.75rem;
+            }
+            
+            .word-chinese {
+                font-size: 0.625rem;
+            }
+            
+            #wordList {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .grid-cell {
+                font-size: 0.75rem;
+                font-weight: 600;
+            }
+            
+            .word-list-container {
+                max-height: 35vh;
+            }
+            
+            .word-item {
+                padding: 6px 8px;
+            }
+            
+            .word-english {
+                font-size: 0.75rem;
+            }
+            
+            .word-chinese {
+                font-size: 0.625rem;
+            }
+            
+            /* 小螢幕下強制使用2列 */
+            #wordList {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+
+        /* 大螢幕優化 */
+        @media (min-width: 1024px) {
+            .word-item {
+                padding: 10px 14px;
+            }
+            
+            .word-english {
+                font-size: 1rem;
+            }
+            
+            .word-chinese {
+                font-size: 0.875rem;
+            }
+            
+            .grid-cell {
+                font-size: 1.125rem;
+                font-weight: 700;
+            }
+        }
+
+        /* 響應式網格單元格優化 */
+        @media (max-width: 640px) {
+            .grid-cell {
+                font-size: 0.75rem;
+                font-weight: 600;
+            }
+            
+            .word-list-container {
+                max-height: 35vh;
+            }
+        }
+
+        /* 大螢幕網格優化 */
+        @media (min-width: 1024px) {
+            .grid-cell {
+                font-size: 1.125rem;
+                font-weight: 700;
+            }
+        }
+
+        .grid-cell.found::after {
+            background-color: transparent;
+        }
+
+        .grid-cell.hint {
+            background-color: #8b5cf6; /* Tailwind violet-500 */
+            color: white;
+            animation: hintPulse 2s infinite;
+            z-index: 3;
+        }
+        
+        .grid-cell.hint::after {
+            background-color: transparent;
+        }
+
+        @keyframes hintPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .hint-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(139, 92, 246, 0.95);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            z-index: 1000;
+            animation: fadeInOut 3s ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translate(-50%, -60%); }
+            20%, 80% { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        .word-list-item.found {
+            text-decoration: line-through;
+            color: #9ca3af; /* Tailwind gray-400 */
+        }
+
+        /* Toggle 說明區域樣式 */
+        .help-toggle-btn {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+        }
+
+        .help-toggle-btn .icon {
+            transition: transform 0.3s ease;
+        }
+
+        .help-toggle-btn.expanded .icon {
+            transform: rotate(180deg);
+        }
+
+        .help-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+            opacity: 0;
+        }
+
+        .help-content.expanded {
+            max-height: 1000px;
+            opacity: 1;
+            transition: max-height 0.5s ease-in, opacity 0.3s ease-in;
+            overflow: visible;
+        }
+        
+        /* 遊戲說明響應式佈局優化 */
+        .help-section {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-top: 16px;
+            padding: 20px !important;
+        }
+        
+        .help-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        
+        @media (min-width: 768px) {
+            .help-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 32px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .help-section {
+                padding: 24px;
+            }
+            
+            .help-grid {
+                gap: 40px;
+            }
+        }
+        
+        /* 遊戲說明內容樣式優化 */
+        .help-section h2 {
+            margin-bottom: 20px;
+            font-size: 1.125rem;
+        }
+        
+        .help-section h3 {
+            margin-bottom: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .help-section p, .help-section li {
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .help-section ol, .help-section ul {
+            margin-bottom: 16px;
+        }
+        
+        .help-section .example-box {
+            margin-top: 16px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .help-section .info-box {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border: 1px solid #bae6fd;
+        }
+        
+        @media (max-width: 640px) {
+            .help-section {
+                padding: 16px;
+                margin-top: 12px;
+            }
+            
+            .help-section h2 {
+                font-size: 1rem;
+                margin-bottom: 16px;
+            }
+            
+            .help-section h3 {
+                font-size: 0.9rem;
+                margin-bottom: 8px;
+            }
+            
+            .help-section p, .help-section li {
+                font-size: 0.85rem;
+                line-height: 1.5;
+            }
+            
+            .help-grid {
+                gap: 20px;
+            }
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .content-wrapper {
+                padding: 16px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .content-wrapper {
+                padding: 12px 16px;
+            }
+            
+            .grid-cell {
+                width: 25px;
+                height: 25px;
+                font-size: 0.65rem;
+            }
+        }
+
+        /* 超小螢幕優化 */
+        @media (max-width: 360px) {
+            body {
+                padding: 2px;
+            }
+            
+            .content-wrapper {
+                padding: 8px 12px;
+            }
+            
+            .grid-cell {
+                width: 22px;
+                height: 22px;
+                font-size: 0.6rem;
+                font-weight: 500;
+            }
+            
+            .word-item {
+                padding: 4px 6px;
+            }
+            
+            .word-english {
+                font-size: 0.65rem;
+            }
+            
+            .word-chinese {
+                font-size: 0.55rem;
+            }
+        }
+
+        /* 極小螢幕優化 */
+        @media (max-width: 320px) {
+            .grid-cell {
+                width: 20px;
+                height: 20px;
+                font-size: 0.55rem;
+            }
+            
+            .main-container {
+                border-radius: 8px;
+            }
+            
+            .content-wrapper {
+                padding: 6px 10px;
+            }
+        }
+
+        /* 彈出式視窗樣式 */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .popup {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 460px;
+            padding: 25px;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .popup-overlay.active .popup {
+            transform: translateY(0);
+        }
+
+        .popup h3 {
+            margin-bottom: 15px;
+            color: #333;
+            text-align: center;
+        }
+
+        .popup .buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .popup .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .popup .btn:active {
+            transform: scale(0.97);
+        }
+
+        .popup .keep-btn {
+            background-color: #f2f5fc;
+            color: #4a6cd6;
+            border: 2px solid #4a6cd6;
+        }
+
+        .popup .keep-btn:hover {
+            background-color: #e0e6f5;
+        }
+
+        /* 音效控制按鈄樣式 */
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sound-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .sound-toggle.muted {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .sound-toggle.muted:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        /* 音效動畫 */
+        @keyframes soundWave {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .sound-toggle.playing {
+            animation: soundWave 0.3s ease-in-out;
+        }
+
+        /* 響應式音效按鈕 */
+        @media (max-width: 768px) {
+            .sound-toggle {
+                top: 15px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sound-toggle {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* 音效動畫（共用） */
+        @keyframes soundWave {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* 音效控制按鈕樣式 - 新設計 */
+        .sound-toggle-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+        .sound-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .sound-toggle-btn.muted {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .sound-toggle-btn.muted:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .sound-toggle-btn.muted .sound-text {
+            content: "關閉";
+        }
+
+        /* 音效按鈕動畫 */
+        .sound-toggle-btn.playing {
+            animation: soundWave 0.3s ease-in-out;
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 640px) {
+            .sound-toggle-btn {
+                padding: 10px 18px;
+                font-size: 0.8rem;
+            }
+            
+            .sound-toggle-btn .sound-text {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sound-toggle-btn {
+                padding: 8px 16px;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* 替換 Tailwind CSS 的工具類別 */
+        
+        /* 佈局 */
+        .flex { display: flex; }
+        .flex-wrap { flex-wrap: wrap; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .items-end { align-items: flex-end; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .space-x-1 > :not([hidden]) ~ :not([hidden]) { margin-left: 0.25rem; }
+        .space-y-1 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.25rem; }
+        .gap-1 { gap: 0.25rem; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-6 { gap: 1.5rem; }
+        
+        /* Grid 系統 */
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+        
+        @media (min-width: 768px) {
+            .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        
+        @media (min-width: 1024px) {
+            .lg\\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            .lg\\:max-h-60 { max-height: 15rem; }
+        }
+        
+        @media (min-width: 1280px) {
+            .xl\\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+        }
+        
+        /* 寬度和高度 */
+        .w-4 { width: 1rem; }
+        .w-6 { width: 1.5rem; }
+        .w-8 { width: 2rem; }
+        .w-full { width: 100%; }
+        .h-4 { height: 1rem; }
+        .h-6 { height: 1.5rem; }
+        .h-8 { height: 2rem; }
+        .max-h-48 { max-height: 12rem; }
+        
+        /* 內外邊距 */
+        .p-1 { padding: 0.25rem; }
+        .p-3 { padding: 0.75rem; }
+        .p-4 { padding: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+        
+        .m-0 { margin: 0; }
+        .mr-1 { margin-right: 0.25rem; }
+        .mr-2 { margin-right: 0.5rem; }
+        .mr-3 { margin-right: 0.75rem; }
+        .ml-1 { margin-left: 0.25rem; }
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mt-3 { margin-top: 0.75rem; }
+        .mt-4 { margin-top: 1rem; }
+        
+        /* 文字 */
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        
+        @media (min-width: 640px) {
+            .sm\\:text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+        }
+        
+        @media (min-width: 640px) {
+            .sm\\:text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+            .sm\\:text-base { font-size: 1rem; line-height: 1.5rem; }
+        }
+        
+        .font-bold { font-weight: 700; }
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .text-center { text-align: center; }
+        
+        /* 顏色 */
+        .text-white { color: rgb(255 255 255); }
+        .text-sky-500 { color: rgb(14 165 233); }
+        .text-sky-600 { color: rgb(2 132 199); }
+        .text-sky-700 { color: rgb(3 105 161); }
+        .text-sky-800 { color: rgb(7 89 133); }
+        .text-slate-500 { color: rgb(100 116 139); }
+        .text-slate-600 { color: rgb(71 85 105); }
+        .text-slate-700 { color: rgb(51 65 85); }
+        .text-amber-600 { color: rgb(217 119 6); }
+        .text-green-600 { color: rgb(22 163 74); }
+        .text-blue-600 { color: rgb(37 99 235); }
+        .text-blue-700 { color: rgb(29 78 216); }
+        .text-purple-700 { color: rgb(126 34 206); }
+        
+        /* 背景顏色 */
+        .bg-white { background-color: rgb(255 255 255); }
+        .bg-sky-50 { background-color: rgb(240 249 255); }
+        .bg-sky-500 { background-color: rgb(14 165 233); }
+        .bg-sky-600 { background-color: rgb(2 132 199); }
+        .bg-slate-50 { background-color: rgb(248 250 252); }
+        .bg-amber-100 { background-color: rgb(254 243 199); }
+        .bg-amber-400 { background-color: rgb(251 191 36); }
+        .bg-green-100 { background-color: rgb(220 252 231); }
+        .bg-green-400 { background-color: rgb(74 222 128) !important; }
+        .bg-green-50 { background-color: rgb(240 253 244); }
+        .bg-yellow-100 { background-color: rgb(254 249 195); }
+        .bg-sky-200 { background-color: rgb(186 230 253); }
+        .bg-blue-50 { background-color: rgb(239 246 255); }
+        .bg-purple-100 { background-color: rgb(243 232 255); }
+        .bg-slate-100 { background-color: rgb(241 245 249); }
+        
+        /* 邊框 */
+        .border { border-width: 1px; border-style: solid; }
+        .border-2 { border-width: 2px; border-style: solid; }
+        .border-sky-200 { border-color: rgb(186 230 253); }
+        .border-slate-200 { border-color: rgb(226 232 240); }
+        .border-blue-200 { border-color: rgb(191 219 254); }
+        .border-yellow-400 { border-color: rgb(250 204 21); }
+        
+        /* 圓角 */
+        .rounded { border-radius: 0.25rem; }
+        .rounded-md { border-radius: 0.375rem; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-full { border-radius: 9999px; }
+        
+        /* 陰影 */
+        .shadow-inner { box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05); }
+        
+        /* 其他工具類別 */
+        .hidden { display: none; }
+        .inline-flex { display: inline-flex; }
+        .overflow-y-auto { overflow-y: auto; }
+        .transition-colors { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        
+        /* 懸停效果 */
+        .hover\\:bg-sky-600:hover { background-color: rgb(2 132 199); }
+
+        .text-purple-700 { color: rgb(126 34 206); }
+        
+        /* 背景顏色 */
+        .bg-slate-100 { background-color: rgb(241 245 249); }
+
+        .text-purple-700 { color: rgb(126 34 206); }
+        .text-red-600 { color: rgb(220 38 38); }
+        
+        /* 背景顏色 */
+        .bg-slate-100 { background-color: rgb(241 245 249); }
+
+        /* 懸停效果 */
+        .hover\\:bg-sky-600:hover { background-color: rgb(2 132 199); }
+
+        /* 其他工具類別 */
+        .hidden { display: none; }
+        .inline-flex { display: inline-flex; }
+        .overflow-y-auto { overflow-y: auto; }
+        .transition-colors { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        
+        /* Code 標籤樣式 */
+        code {
+            background-color: rgb(241 245 249); /* bg-slate-100 */
+            padding: 0.125rem 0.25rem; /* px-1 */
+            border-radius: 0.25rem; /* rounded */
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.875em;
+        }
+        
+        /* 懸停效果 */
+        .hover\\:bg-sky-600:hover { background-color: rgb(2 132 199); }
+
+        .text-red-600 { color: rgb(220 38 38); }
+        
+        /* 背景顏色 */
+        .bg-green-50 { background-color: rgb(240 253 244); }
+        
+        /* 懸停效果 */
+        .hover\\:bg-sky-600:hover { background-color: rgb(2 132 199); }
+
+        /* 懸停效果 */
+        .hover\\:bg-sky-600:hover { background-color: rgb(2 132 199); }
+        
+        /* 按鈕樣式優化 */
+        #regenerateBtn {
+            border: none !important;
+            outline: none;
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+        }
+        
+        #regenerateBtn:hover {
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+            transform: translateY(-1px);
+        }
+        
+        #regenerateBtn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        #regenerateBtn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+        
+        #regenerateBtn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+        
+        /* 優化的單字列表佈局 */
+        .word-list-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: flex-start;
+            padding: 6px;
+        }
+        
+        .word-list-flex .word-item {
+            flex: 0 0 auto;
+            min-width: 120px;
+            max-width: 180px;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
+        
+        .word-list-flex .word-english {
+            font-size: 0.85rem;
+            margin-bottom: 1px;
+        }
+        
+        .word-list-flex .word-chinese {
+            font-size: 0.7rem;
+            line-height: 1.2;
+        }
+        
+        /* 響應式優化 */
+        @media (min-width: 768px) {
+            .word-list-flex .word-item {
+                min-width: 140px;
+                max-width: 200px;
+                padding: 8px 12px;
+                font-size: 0.875rem;
+            }
+            
+            .word-list-flex .word-english {
+                font-size: 0.9rem;
+            }
+            
+            .word-list-flex .word-chinese {
+                font-size: 0.75rem;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .word-list-flex .word-item {
+                min-width: 150px;
+                max-width: 220px;
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+            
+            .word-list-flex .word-english {
+                font-size: 1rem;
+            }
+            
+            .word-list-flex .word-chinese {
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .word-list-flex {
+                gap: 4px;
+            }
+            
+            .word-list-flex .word-item {
+                min-width: 100px;
+                max-width: 140px;
+                padding: 5px 8px;
+                font-size: 0.75rem;
+            }
+            
+            .word-list-flex .word-english {
+                font-size: 0.8rem;
+            }
+            
+            .word-list-flex .word-chinese {
+                font-size: 0.65rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .word-list-flex .word-item {
+                min-width: 90px;
+                max-width: 120px;
+                padding: 4px 6px;
+                font-size: 0.7rem;
+            }
+            
+            .word-list-flex .word-english {
+                font-size: 0.75rem;
+            }
+            
+            .word-list-flex .word-chinese {
+                font-size: 0.6rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .word-list-flex .word-item {
+                min-width: 90px;
+                max-width: 120px;
+                padding: 4px 6px;
+                font-size: 0.7rem;
+            }
+            
+            .word-list-flex .word-english {
+                font-size: 0.75rem;
+            }
+            
+            .word-list-flex .word-chinese {
+                font-size: 0.6rem;
+            }
+        }
+        
+        /* 遊戲說明空間優化 */
+        @media (max-width: 768px) {
+            .help-section {
+                padding: 14px !important;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .help-section {
+                padding: 10px !important;
+                margin-top: 10px;
+            }
+            
+            .help-section h2 {
+                font-size: 0.95rem !important;
+                margin-bottom: 14px !important;
+            }
+            
+            .help-section h3 {
+                font-size: 0.85rem !important;
+                margin-bottom: 6px !important;
+            }
+            
+            .help-section p, .help-section li {
+                font-size: 0.8rem !important;
+                line-height: 1.4 !important;
+                margin-bottom: 4px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .help-section {
+                padding: 8px !important;
+                margin-top: 8px;
+            }
+            
+            .help-section h2 {
+                font-size: 0.9rem !important;
+                margin-bottom: 12px !important;
+            }
+            
+            .help-section h3 {
+                font-size: 0.8rem !important;
+                margin-bottom: 4px !important;
+            }
+            
+            .help-section p, .help-section li {
+                font-size: 0.75rem !important;
+                line-height: 1.3 !important;
+                margin-bottom: 3px !important;
+            }
+            
+            .help-grid {
+                gap: 16px !important;
+            }
+        }
+
+        /* 確保綠色CAT演示正確顯示 */
+        .help-section .example-box .bg-green-400 {
+            background-color: rgb(74 222 128) !important;
+            color: white !important;
+            width: 2rem !important;
+            height: 2rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 0.25rem !important;
+            font-weight: 700 !important;
+            font-size: 0.875rem !important;
+        }
+        
+        /* 確保其他演示樣式也正確 */
+        .help-section .example-box .bg-amber-400 {
+            background-color: rgb(251 191 36) !important;
+            color: white !important;
+        }
+        
+        .help-section .example-box .bg-yellow-100 {
+            background-color: rgb(254 249 195) !important;
+        }
+        
+        .help-section .example-box .border-yellow-400 {
+            border-color: rgb(250 204 21) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="content-wrapper">
+            <header class="mb-6 text-center">
+                <h1 class="text-3xl sm:text-4xl font-bold text-sky-600"><i class="fas fa-th mr-2 text-sky-600"></i>字彙謎題</h1>
+            </header>
+
+            <!-- 可收合的遊戲說明 -->
+            <div class="mb-6">
+                <div class="flex flex-wrap gap-3 justify-center items-center">
+                    <button id="helpToggleBtn" class="help-toggle-btn">
+                        <i class="fas fa-question-circle mr-2"></i>
+                        <span>遊戲說明</span>
+                        <svg class="icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    
+                    <!-- 音效控制按鈕 -->
+                    <button id="soundToggle" class="sound-toggle-btn" title="音效控制">
+                        <i class="fas fa-volume-up mr-2"></i>
+                        <span class="sound-text">開啟</span>
+                        <i class="fas fa-music ml-1"></i>
+                    </button>
+                </div>
+                
+                <div id="helpContent" class="help-content">
+                    <div class="help-section">
+                        <!-- 簡化標題區 -->
+                        <div class="text-center mb-6">
+                            <h2 class="text-sky-800 text-lg font-bold">在網格中找出所有隱藏的英文單字！</h2>
+                        </div>
+                        
+                        <!-- 核心操作說明 -->
+                        <div class="help-grid">
+                            <div>
+                                <h3 class="text-sky-700 flex items-center mb-3">
+                                    <span class="w-6 h-6 bg-sky-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-2">1</span>
+                                    點擊起始字母
+                                </h3>
+                                <div class="example-box text-center">
+                                    <p class="text-xs text-slate-500 mb-2">點擊單字的第一個字母</p>
+                                    <div class="inline-flex space-x-1">
+                                        <div class="w-8 h-8 bg-amber-400 text-white text-sm flex items-center justify-center rounded font-bold shadow-md">C</div>
+                                        <div class="w-8 h-8 bg-slate-100 text-slate-400 text-sm flex items-center justify-center rounded">A</div>
+                                        <div class="w-8 h-8 bg-slate-100 text-slate-400 text-sm flex items-center justify-center rounded">T</div>
+                                    </div>
+                                </div>
+                                
+                                <h3 class="text-sky-700 flex items-center mb-3 mt-4">
+                                    <span class="w-6 h-6 bg-sky-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-2">2</span>
+                                    點擊結束字母
+                                </h3>
+                                <div class="example-box text-center">
+                                    <p class="text-xs text-slate-500 mb-2">再點擊單字的最後一個字母</p>
+                                    <div class="inline-flex space-x-1">
+                                        <div class="w-8 h-8 bg-amber-400 text-white text-sm flex items-center justify-center rounded font-bold">C</div>
+                                        <div class="w-8 h-8 bg-yellow-100 border-yellow-400 border text-sm flex items-center justify-center rounded">A</div>
+                                        <div class="w-8 h-8 bg-yellow-100 border-yellow-400 border-2 text-sm flex items-center justify-center rounded font-bold shadow-md">T</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-sky-700 flex items-center mb-3 mt-4">
+                                    <span class="w-6 h-6 bg-sky-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-2">3</span>
+                                    完成！
+                                </h3>
+                                <div class="example-box text-center">
+                                    <p class="text-xs text-slate-500 mb-2">找到的單字會變綠色</p>
+                                    <div class="inline-flex space-x-1 mb-3">
+                                        <div class="w-8 h-8 bg-green-400 text-white text-sm flex items-center justify-center rounded font-bold">C</div>
+                                        <div class="w-8 h-8 bg-green-400 text-white text-sm flex items-center justify-center rounded font-bold">A</div>
+                                        <div class="w-8 h-8 bg-green-400 text-white text-sm flex items-center justify-center rounded font-bold">T</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="info-box">
+                                    <h4 class="text-sky-700 font-semibold mb-2 flex items-center">
+                                        <i class="fas fa-lightbulb mr-2"></i>小提示
+                                    </h4>
+                                    <ul class="text-xs text-slate-600 space-y-1">
+                                        <li>單字可能是 ➡️ ⬇️ ↗️ ↙️ 任何正向或反向排列</li>
+                                        <li>卡住了？等15秒會自動提示 💡</li>
+                                        <li>點錯了？再點一次重新選擇</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6 mb-6">
+                <!-- 載入狀態指示器 -->
+                <div id="loadingIndicator" class="text-center py-8">
+                    <div class="inline-flex items-center px-6 py-3 rounded-lg bg-sky-50 border border-sky-200">
+                        <i class="fas fa-spinner fa-spin mr-3 text-sky-500"></i>
+                        <span class="text-sky-700 font-medium">正在載入單字資料...</span>
+                    </div>
+                </div>
+
+                <!-- 單字列表 -->
+                <div class="w-full">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-xl font-semibold text-slate-700 flex items-center">
+                            <i class="fas fa-list-ul mr-2 text-sky-600"></i>待尋找的單字:
+                        </h2>
+                        <div class="flex items-center gap-3">
+                            <div class="text-sm text-slate-500 flex items-center">
+                                <i class="fas fa-th mr-2"></i>
+                                <span id="gridSizeDisplay">網格大小: 自動調整中...</span>
+                            </div>
+                            <button id="regenerateBtn" class="hidden px-3 py-1 text-xs bg-sky-500 text-white rounded-md hover:bg-sky-600 transition-colors flex items-center gap-1">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>重新生成</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="wordListContainer" class="word-list-container bg-slate-50 p-2 rounded-lg shadow-inner overflow-y-auto max-h-48 lg:max-h-60">
+                        <div id="wordList" class="word-list-flex">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 謎題網格 -->
+                <div class="w-full">
+                    <h2 class="text-xl font-semibold text-slate-700 mb-3 text-center flex items-center justify-center">
+                        謎題網格
+                    </h2>
+                    <div class="flex justify-center">
+                        <div id="puzzleGrid" class="grid rounded-lg shadow-inner bg-white border-2 border-slate-200" style="display: grid; aspect-ratio: 1 / 1; touch-action: none; max-width: min(600px, 80vh); width: 100%; gap: 0;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="messageArea" class="text-center text-green-600 font-semibold mt-4 h-6"></div>
+        </div>
+    </div>
+
+    <script>
+        // 🎵 音效系統
+        class SoundSystem {
+            constructor() {
+                this.audioContext = null;
+                this.soundEnabled = true;
+                this.sounds = {};
+                this.init();
+            }
+
+            init() {
+                // 初始化 Web Audio Context
+                try {
+                    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.audioContext = new AudioContext();
+                } catch (e) {
+                    console.warn('Web Audio API 不支援');
+                    this.soundEnabled = false;
+                    return;
+                }
+
+                // 預生成音效
+                this.generateSounds();
+                
+                // 設置音效控制按鈕
+                this.setupSoundToggle();
+                
+                // 從 localStorage 讀取用戶偏好
+                const savedSetting = localStorage.getItem('vocabWall_soundEnabled');
+                if (savedSetting !== null) {
+                    this.soundEnabled = savedSetting === 'true';
+                    this.updateToggleButton();
+                }
+            }
+
+            generateSounds() {
+                // 🎉 找到單字的音效 (愉悅的鈴鐺聲)
+                this.sounds.wordFound = () => {
+                    this.playTone(800, 0.1, 'sine');
+                    setTimeout(() => this.playTone(1000, 0.1, 'sine'), 100);
+                    setTimeout(() => this.playTone(1200, 0.2, 'sine'), 200);
+                };
+
+                // 🏆 遊戲完成的音效 (勝利音樂)
+                this.sounds.gameComplete = () => {
+                    const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
+                    notes.forEach((frequency, index) => {
+                        setTimeout(() => {
+                            this.playTone(frequency, 0.3, 'sine');
+                        }, index * 150);
+                    });
+                };
+
+                // 🔘 點擊音效 (輕柔的點擊聲)
+                this.sounds.click = () => {
+                    this.playTone(400, 0.05, 'sine');
+                };
+
+                // 🎯 選擇起始字母的音效
+                this.sounds.selectStart = () => {
+                    this.playTone(600, 0.1, 'triangle');
+                };
+
+                // ❌ 錯誤選擇的音效
+                this.sounds.error = () => {
+                    this.playTone(200, 0.2, 'sawtooth');
+                };
+
+                // 💡 提示音效
+                this.sounds.hint = () => {
+                    this.playTone(300, 0.1, 'sine');
+                    setTimeout(() => this.playTone(350, 0.1, 'sine'), 100);
+                    setTimeout(() => this.playTone(400, 0.1, 'sine'), 200);
+                };
+
+                // 🔄 重新生成音效
+                this.sounds.regenerate = () => {
+                    this.playTone(450, 0.1, 'triangle');
+                    setTimeout(() => this.playTone(350, 0.1, 'triangle'), 100);
+                };
+            }
+
+            playTone(frequency, duration, type = 'sine', volume = 0.1) {
+                if (!this.soundEnabled || !this.audioContext) return;
+
+                try {
+                    // 恢復 AudioContext（如果需要）
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+
+                    oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                    oscillator.type = type;
+
+                    // 音量包絡
+                    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(volume, this.audioContext.currentTime + 0.01);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                } catch (e) {
+                    console.warn('音效播放失敗:', e);
+                }
+            }
+
+            setupSoundToggle() {
+                const toggleBtn = document.getElementById('soundToggle');
+                if (!toggleBtn) return;
+
+                toggleBtn.addEventListener('click', () => {
+                    this.toggleSound();
+                    // 播放點擊音效（如果音效是開啟的）
+                    setTimeout(() => this.sounds.click(), 50);
+                });
+            }
+
+            toggleSound() {
+                this.soundEnabled = !this.soundEnabled;
+                localStorage.setItem('vocabWall_soundEnabled', this.soundEnabled.toString());
+                this.updateToggleButton();
+            }
+
+            updateToggleButton() {
+                const toggleBtn = document.getElementById('soundToggle');
+                if (!toggleBtn) return;
+                
+                const icon = toggleBtn.querySelector('i');
+                const soundText = toggleBtn.querySelector('.sound-text');
+                
+                if (this.soundEnabled) {
+                    toggleBtn.classList.remove('muted');
+                    if (icon) icon.className = 'fas fa-volume-up mr-2';
+                    if (soundText) soundText.textContent = '開啟';
+                    toggleBtn.title = '關閉音效';
+                } else {
+                    toggleBtn.classList.add('muted');
+                    if (icon) icon.className = 'fas fa-volume-mute mr-2';
+                    if (soundText) soundText.textContent = '關閉';
+                    toggleBtn.title = '開啟音效';
+                }
+            }
+
+            // 播放音效的便捷方法
+            play(soundName) {
+                if (this.sounds[soundName] && this.soundEnabled) {
+                    this.sounds[soundName]();
+                    
+                    // 添加視覺反饋
+                    const toggleBtn = document.getElementById('soundToggle');
+                    if (toggleBtn && this.soundEnabled) {
+                        toggleBtn.classList.add('playing');
+                        setTimeout(() => {
+                            toggleBtn.classList.remove('playing');
+                        }, 300);
+                    }
+                }
+            }
+        }
+
+        // 初始化音效系統
+        const soundSystem = new SoundSystem();
+
+        // --- DOM Elements ---
+        const puzzleGrid = document.getElementById('puzzleGrid');
+        const wordListEl = document.getElementById('wordList');
+        const messageArea = document.getElementById('messageArea');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const gridSizeDisplay = document.getElementById('gridSizeDisplay');
+
+        // --- Global State ---
+        let currentGrid = [];
+        let wordsToFind = [];
+        let foundWords = new Set();
+        let gridSize = 15; // Default grid size
+        
+        // State for click mode
+        let firstClick = null;
+
+        // 提示系統變數
+        let inactivityTimer = null;
+        let lastActivityTime = Date.now();
+        let hintTimeout = 15000; // 15秒後顯示提示
+        let currentHint = null;
+        let wordPositions = new Map(); // 儲存每個單字在網格中的位置
+
+        // --- Utility Functions ---
+        const getRandomLetter = () => {
+            // 分析已放置單字的大小寫比例
+            let uppercaseCount = 0;
+            let lowercaseCount = 0;
+            
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    const char = currentGrid[r][c];
+                    if (char && char !== '') {
+                        if (char >= 'A' && char <= 'Z') uppercaseCount++;
+                        else if (char >= 'a' && char <= 'z') lowercaseCount++;
+                    }
+                }
+            }
+            
+            // 如果沒有已放置的字母，默認使用大小寫混合
+            if (uppercaseCount === 0 && lowercaseCount === 0) {
+                const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+                return alphabet[Math.floor(Math.random() * alphabet.length)];
+            }
+            
+            // 根據比例決定生成大寫還是小寫
+            const total = uppercaseCount + lowercaseCount;
+            const uppercaseRatio = uppercaseCount / total;
+            
+            if (Math.random() < uppercaseRatio) {
+                const uppercaseAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                return uppercaseAlphabet[Math.floor(Math.random() * uppercaseAlphabet.length)];
+            } else {
+                const lowercaseAlphabet = "abcdefghijklmnopqrstuvwxyz";
+                return lowercaseAlphabet[Math.floor(Math.random() * lowercaseAlphabet.length)];
+            }
+        };
+
+        // 獲取 URL 參數函數
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // 從 Google Sheet 載入資料
+        async function loadSheetData() {
+            const label = getQueryParam("label") || "";
+            if (!label) {
+                throw new Error("請在URL中指定label參數 (例如: ?label=toeic)");
+            }
+
+            const spreadsheetId = "1wSHAL3piJGEJ8EnoyK_W9kkvL42GQYId35UEhMzHTZY"; 
+            const gid = "0"; 
+            const spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${gid}`;
+
+            try {
+                const response = await fetch(spreadsheetUrl);
+                if (!response.ok) throw new Error("無法載入試算表資料");
+                const csvText = await response.text();
+                if (!csvText.trim()) throw new Error("試算表內容為空");
+
+                // 解析 CSV
+                const { data } = Papa.parse(csvText, { header: false });
+                if (!data || data.length === 0) throw new Error("解析後的資料為空");
+
+                // 取表頭
+                const header = data.shift();
+                if (!header) throw new Error("無法提取表頭，資料格式可能有誤");
+
+                // 過濾資料：只保留第一欄 (Label) 符合的
+                const filteredData = data.filter(row => row[0] && row[0].toLowerCase() === label.toLowerCase());
+                if (filteredData.length === 0) {
+                    throw new Error(`找不到標籤為 "${label}" 的單字資料`);
+                }
+
+                // 去除每行的第一欄 (Label)
+                const processedData = filteredData.map(row => row.slice(1));
+
+                // 轉換成我們的詞彙格式
+                const vocabularyData = processedData.map(row => {
+                    return {
+                        word: (row[0] || "").trim(),
+                        phonetic: (row[1] || "").trim(),
+                        meaning: (row[2] || "").trim(),
+                        example: (row[3] || "").trim(),
+                        translation: (row[4] || "").trim(),
+                        videoRelated: (row[5] || "").trim(),
+                        markStart: (row[6] || "").trim(),
+                        markEnd: (row[7] || "").trim()
+                    };
+                });
+
+                // 過濾掉空白的資料
+                const validVocabularyData = vocabularyData.filter(word => 
+                    word.word && word.meaning // 至少要有單字和意思
+                );
+
+                // 限制最多30個單字，如果超過則隨機選擇
+                let finalVocabularyData = validVocabularyData;
+                if (validVocabularyData.length > 30) {
+                    finalVocabularyData = shuffleArray([...validVocabularyData]).slice(0, 30);
+                }
+
+                // 排序詞彙（依照單字字母順序）
+                finalVocabularyData.sort((a, b) => a.word.toLowerCase().localeCompare(b.word.toLowerCase()));
+                
+                return finalVocabularyData;
+            } catch (error) {
+                console.error("載入資料失敗:", error);
+                throw error;
+            }
+        }
+
+        // 根據螢幕尺寸獲取推薦的最大單字數量
+        function getRecommendedMaxWords() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const isMobile = screenWidth <= 768;
+            const isSmallMobile = screenWidth <= 480;
+            
+            if (isSmallMobile) {
+                return 8; // 超小螢幕：最多8個單字
+            } else if (isMobile) {
+                return 12; // 手機：最多12個單字
+            } else if (screenWidth <= 1024) {
+                return 18; // 平板：最多18個單字
+            } else {
+                return 25; // 桌面：最多25個單字
+            }
+        }
+
+        // 根據螢幕尺寸和單字數量智能計算網格大小
+        function calculateOptimalGridSize(wordCount) {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const isMobile = screenWidth <= 768;
+            const isSmallMobile = screenWidth <= 480;
+            
+            // 基礎網格大小計算
+            let baseGridSize;
+            if (wordCount <= 5) baseGridSize = 8;
+            else if (wordCount <= 8) baseGridSize = 10;
+            else if (wordCount <= 12) baseGridSize = 12;
+            else if (wordCount <= 15) baseGridSize = 14;
+            else if (wordCount <= 18) baseGridSize = 16;
+            else if (wordCount <= 22) baseGridSize = 18;
+            else baseGridSize = 20;
+            
+            // 根據螢幕尺寸調整
+            if (isSmallMobile) {
+                return Math.min(baseGridSize, 12); // 超小螢幕限制最大12x12
+            } else if (isMobile) {
+                return Math.min(baseGridSize, 15); // 手機限制最大15x15
+            } else {
+                return baseGridSize;
+            }
+        }
+
+        // 顯示難度選擇對話框
+        function showDifficultySelection(vocabularyData) {
+            const maxWords = getRecommendedMaxWords();
+            const totalWords = vocabularyData.length;
+            
+            // 如果單字數量在推薦範圍內，直接開始遊戲
+            if (totalWords <= maxWords) {
+                generatePuzzle(vocabularyData);
+                return;
+            }
+            
+            // 創建難度選擇界面
+            const difficultyOverlay = document.createElement('div');
+            difficultyOverlay.className = 'popup-overlay active';
+            difficultyOverlay.innerHTML = `
+                <div class="popup">
+                    <h3><i class="fas fa-cog mr-2"></i>選擇遊戲難度</h3>
+                    <div style="margin-bottom: 20px; text-align: center; color: #666;">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        偵測到您的螢幕較小，建議調整單字數量以獲得最佳遊戲體驗
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <button class="difficulty-btn easy-btn" data-count="${Math.min(8, totalWords)}">
+                                <i class="fas fa-leaf mr-2"></i>
+                                <div>
+                                    <div style="font-weight: bold;">簡單模式</div>
+                                    <div style="font-size: 0.8em; opacity: 0.7;">${Math.min(8, totalWords)} 個單字</div>
+                                </div>
+                            </button>
+                            <button class="difficulty-btn medium-btn" data-count="${Math.min(maxWords, totalWords)}">
+                                <i class="fas fa-star mr-2"></i>
+                                <div>
+                                    <div style="font-weight: bold;">推薦模式</div>
+                                    <div style="font-size: 0.8em; opacity: 0.7;">${Math.min(maxWords, totalWords)} 個單字（建議）</div>
+                                </div>
+                            </button>
+                            <button class="difficulty-btn hard-btn" data-count="${totalWords}">
+                                <i class="fas fa-fire mr-2"></i>
+                                <div>
+                                    <div style="font-weight: bold;">挑戰模式</div>
+                                    <div style="font-size: 0.8em; opacity: 0.7;">${totalWords} 個單字（全部）</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="buttons">
+                        <button class="btn keep-btn" id="auto-select-btn">
+                            <i class="fas fa-magic mr-2"></i>自動選擇
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(difficultyOverlay);
+            
+            // 添加難度按鈕樣式
+            const style = document.createElement('style');
+            style.textContent = `
+                .difficulty-btn {
+                    width: 100%;
+                    padding: 15px;
+                    border: 2px solid #e2e8f0;
+                    border-radius: 8px;
+                    background: white;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    text-align: left;
+                }
+                .difficulty-btn:hover {
+                    border-color: #60a5fa;
+                    background: #f8fafc;
+                    transform: translateY(-1px);
+                }
+                .easy-btn { border-color: #10b981; }
+                .easy-btn:hover { border-color: #059669; background: #f0fdf4; }
+                .medium-btn { border-color: #f59e0b; }
+                .medium-btn:hover { border-color: #d97706; background: #fffbeb; }
+                .hard-btn { border-color: #ef4444; }
+                .hard-btn:hover { border-color: #dc2626; background: #fef2f2; }
+            `;
+            document.head.appendChild(style);
+            
+            // 事件監聽
+            difficultyOverlay.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 🎵 播放點擊音效
+                    soundSystem.play('click');
+                    const wordCount = parseInt(btn.dataset.count);
+                    const selectedWords = shuffleArray([...vocabularyData]).slice(0, wordCount);
+                    difficultyOverlay.remove();
+                    style.remove();
+                    generatePuzzle(selectedWords);
+                });
+            });
+            
+            // 自動選擇按鈕
+            difficultyOverlay.querySelector('#auto-select-btn').addEventListener('click', () => {
+                // 🎵 播放點擊音效
+                soundSystem.play('click');
+                const selectedWords = shuffleArray([...vocabularyData]).slice(0, maxWords);
+                difficultyOverlay.remove();
+                style.remove();
+                generatePuzzle(selectedWords);
+            });
+        }
+
+        // --- Puzzle Generation Logic ---
+        function generatePuzzle(vocabularyData) {
+            if (!vocabularyData || vocabularyData.length === 0) {
+                showMessage("沒有單字資料可以產生謎題。", true);
+                return;
+            }
+
+            // 使用載入的單字資料
+            const targetWordCount = vocabularyData.length;
+            const targetWords = vocabularyData.map(item => item.word);
+            
+            // 智能重試機制：嘗試多種策略確保放入所有單字
+            let placedWords = [];
+            let currentAttempt = 0;
+            const maxAttempts = 5;
+            
+            while (placedWords.length < targetWordCount && currentAttempt < maxAttempts) {
+                currentAttempt++;
+                
+                // 根據嘗試次數調整策略
+                let adjustedGridSize;
+                if (currentAttempt === 1) {
+                    // 第一次：使用計算的網格大小
+                    adjustedGridSize = calculateOptimalGridSize(targetWordCount);
+                } else {
+                    // 後續嘗試：逐漸增加網格大小
+                    adjustedGridSize = calculateOptimalGridSize(targetWordCount) + (currentAttempt - 1) * 2;
+                    
+                    // 確保不會超過合理範圍
+                    const maxReasonableSize = Math.min(25, Math.sqrt(targetWordCount * 8));
+                    adjustedGridSize = Math.min(adjustedGridSize, maxReasonableSize);
+                }
+                
+                // 設置網格
+                gridSize = adjustedGridSize;
+                currentGrid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
+                foundWords.clear();
+                wordPositions.clear();
+                
+                // 嘗試放置單字
+                placedWords = placeWordsWithRetry(currentGrid, targetWords, currentAttempt);
+                
+                // 如果成功放入所有單字，跳出迴圈
+                if (placedWords.length === targetWordCount) {
+                    break;
+                }
+                
+                // 如果放入的單字數量接近目標（90%以上），也接受
+                if (placedWords.length >= Math.ceil(targetWordCount * 0.9)) {
+                    break;
+                }
+            }
+            
+            // 更新最終結果
+            wordsToFind = placedWords;
+            document.documentElement.style.setProperty('--grid-size', gridSize);
+            
+            // 更新網格大小顯示
+            const successRate = Math.round((placedWords.length / targetWordCount) * 100);
+            gridSizeDisplay.textContent = `網格大小: ${gridSize}×${gridSize} (${placedWords.length}/${targetWordCount}個單字, ${successRate}%)`;
+
+            messageArea.textContent = '';
+            clearClickSelection();
+
+            // 顯示結果訊息
+            if (placedWords.length === targetWordCount) {
+                showMessage("謎題已完美產生！所有單字都已放入網格。");
+            } else {
+                showMessage(`謎題已產生！成功放入 ${placedWords.length}/${targetWordCount} 個單字。`);
+            }
+
+            fillEmptyCells(currentGrid);
+            renderGrid(currentGrid);
+            
+            // 只渲染成功放入的單字
+            const successfulVocabulary = vocabularyData.filter(item => 
+                placedWords.includes(item.word)
+            );
+            renderWordList(successfulVocabulary);
+            
+            // 🔍 一致性驗證機制
+            validatePuzzleConsistency(placedWords, successfulVocabulary);
+            
+            // 顯示重新生成按鈕（如果沒有放入所有單字）
+            const regenerateBtn = document.getElementById('regenerateBtn');
+            if (placedWords.length < targetWordCount) {
+                regenerateBtn.classList.remove('hidden');
+                // 更新按鈕事件（移除舊的事件監聽器）
+                const newRegenerateBtn = regenerateBtn.cloneNode(true);
+                regenerateBtn.parentNode.replaceChild(newRegenerateBtn, regenerateBtn);
+                
+                // 添加新的事件監聽器
+                newRegenerateBtn.addEventListener('click', () => {
+                    // 🎵 播放重新生成音效
+                    soundSystem.play('regenerate');
+                    generatePuzzle(vocabularyData);
+                });
+            } else {
+                regenerateBtn.classList.add('hidden');
+            }
+        }
+
+        // 🔍 完整的一致性驗證函數
+        function validatePuzzleConsistency(placedWords, successfulVocabulary) {
+            console.group('🔍 謎題一致性驗證');
+            
+            // 1. 檢查 wordsToFind 與 placedWords 是否一致
+            const wordsToFindSet = new Set(wordsToFind);
+            const placedWordsSet = new Set(placedWords);
+            
+            console.log('📊 基本統計:');
+            console.log(`   wordsToFind 數量: ${wordsToFind.length}`);
+            console.log(`   placedWords 數量: ${placedWords.length}`);
+            console.log(`   successfulVocabulary 數量: ${successfulVocabulary.length}`);
+            
+            // 2. 檢查待尋找清單是否與網格內單字一致
+            const isWordsToFindConsistent = wordsToFind.length === placedWords.length && 
+                wordsToFind.every(word => placedWordsSet.has(word));
+            
+            console.log(`✅ wordsToFind 與 placedWords 一致性: ${isWordsToFindConsistent ? '通過' : '❌ 失敗'}`);
+            
+            if (!isWordsToFindConsistent) {
+                const onlyInWordsToFind = wordsToFind.filter(word => !placedWordsSet.has(word));
+                const onlyInPlacedWords = placedWords.filter(word => !wordsToFindSet.has(word));
+                
+                if (onlyInWordsToFind.length > 0) {
+                    console.warn('⚠️ 存在於 wordsToFind 但不在 placedWords:', onlyInWordsToFind);
+                }
+                if (onlyInPlacedWords.length > 0) {
+                    console.warn('⚠️ 存在於 placedWords 但不在 wordsToFind:', onlyInPlacedWords);
+                }
+            }
+            
+            // 3. 檢查單字列表是否與網格內單字一致
+            const vocabularyWords = successfulVocabulary.map(item => item.word);
+            const vocabularyWordsSet = new Set(vocabularyWords);
+            
+            const isVocabularyConsistent = vocabularyWords.length === placedWords.length &&
+                vocabularyWords.every(word => placedWordsSet.has(word));
+                
+            console.log(`✅ successfulVocabulary 與 placedWords 一致性: ${isVocabularyConsistent ? '通過' : '❌ 失敗'}`);
+            
+            if (!isVocabularyConsistent) {
+                const onlyInVocabulary = vocabularyWords.filter(word => !placedWordsSet.has(word));
+                const onlyInPlaced = placedWords.filter(word => !vocabularyWordsSet.has(word));
+                
+                if (onlyInVocabulary.length > 0) {
+                    console.warn('⚠️ 存在於 vocabulary 但不在 placedWords:', onlyInVocabulary);
+                }
+                if (onlyInPlaced.length > 0) {
+                    console.warn('⚠️ 存在於 placedWords 但不在 vocabulary:', onlyInPlaced);
+                }
+            }
+            
+            // 4. 檢查網格中實際包含的單字
+            const gridWords = extractWordsFromGrid();
+            const gridWordsSet = new Set(gridWords);
+            
+            console.log(`📍 網格中實際找到的單字數量: ${gridWords.length}`);
+            console.log(`📍 網格中的單字: [${gridWords.join(', ')}]`);
+            
+            const isGridConsistent = gridWords.length === placedWords.length &&
+                gridWords.every(word => placedWordsSet.has(word));
+                
+            console.log(`✅ 網格實際內容與 placedWords 一致性: ${isGridConsistent ? '通過' : '❌ 失敗'}`);
+            
+            if (!isGridConsistent) {
+                const onlyInGrid = gridWords.filter(word => !placedWordsSet.has(word));
+                const onlyInPlaced = placedWords.filter(word => !gridWordsSet.has(word));
+                
+                if (onlyInGrid.length > 0) {
+                    console.warn('⚠️ 存在於網格但不在 placedWords:', onlyInGrid);
+                }
+                if (onlyInPlaced.length > 0) {
+                    console.warn('⚠️ 存在於 placedWords 但不在網格:', onlyInPlaced);
+                }
+            }
+            
+            // 5. 總結
+            const overallConsistency = isWordsToFindConsistent && isVocabularyConsistent && isGridConsistent;
+            
+            if (overallConsistency) {
+                console.log('🎉 完整一致性驗證通過！所有數據結構保持同步。');
+            } else {
+                console.error('❌ 發現一致性問題！需要修復數據同步。');
+                
+                // 自動修復機制
+                console.log('🔧 嘗試自動修復...');
+                fixConsistencyIssues(placedWords, successfulVocabulary);
+            }
+            
+            console.groupEnd();
+        }
+
+        // 🔧 自動修復一致性問題
+        function fixConsistencyIssues(placedWords, successfulVocabulary) {
+            // 確保 wordsToFind 與實際放置的單字一致
+            wordsToFind = [...placedWords];
+            
+            // 重新渲染單字列表，確保只顯示實際放置的單字
+            const correctedVocabulary = successfulVocabulary.filter(item => 
+                placedWords.includes(item.word)
+            );
+            
+            if (correctedVocabulary.length !== successfulVocabulary.length) {
+                console.log('🔧 重新渲染單字列表以確保一致性');
+                renderWordList(correctedVocabulary);
+            }
+            
+            console.log('✅ 自動修復完成');
+        }
+
+        // 📍 從網格中提取實際存在的單字
+        function extractWordsFromGrid() {
+            const foundWords = [];
+            
+            // 從 wordPositions 中提取（這是最可靠的來源）
+            for (const [word, position] of wordPositions.entries()) {
+                foundWords.push(word);
+            }
+            
+            return foundWords.sort(); // 排序以便比較
+        }
+
+        // 改進的單字放置函數，包含重試邏輯
+        function placeWordsWithRetry(grid, words, attemptNumber) {
+            const directions = [
+                { dr: 0, dc: 1 },  // Horizontal (R)
+                { dr: 1, dc: 0 },  // Vertical (D)
+                { dr: 1, dc: 1 },  // Diagonal (DR)
+                { dr: 1, dc: -1 }, // Diagonal (DL)
+                { dr: 0, dc: -1 }, // Horizontal (L)
+                { dr: -1, dc: 0 }, // Vertical (U)
+                { dr: -1, dc: -1}, // Diagonal (UL)
+                { dr: -1, dc: 1 }  // Diagonal (UR)
+            ];
+            
+            // 根據嘗試次數調整策略
+            let maxAttemptsPerWord = 100;
+            let sortStrategy = 'length'; // 'length', 'random', 'difficulty'
+            
+            if (attemptNumber > 1) {
+                maxAttemptsPerWord = 150 + (attemptNumber - 1) * 50; // 增加單字嘗試次數
+            }
+            
+            if (attemptNumber > 3) {
+                sortStrategy = 'random'; // 改變排序策略
+            }
+            
+            const successfullyPlacedWords = [];
+
+            // 根據策略排序單字
+            let sortedWords;
+            switch (sortStrategy) {
+                case 'random':
+                    sortedWords = shuffleArray([...words]);
+                    break;
+                case 'difficulty':
+                    // 先放短單字，再放長單字
+                    sortedWords = [...words].sort((a, b) => a.length - b.length);
+                    break;
+                default: // 'length'
+                    // 先放長單字，再放短單字（原本的策略）
+                    sortedWords = [...words].sort((a, b) => b.length - a.length);
+            }
+
+            for (const word of sortedWords) {
+                let placed = false;
+                
+                for (let attempt = 0; attempt < maxAttemptsPerWord; attempt++) {
+                    // 根據嘗試次數調整方向選擇
+                    let availableDirections = [...directions];
+                    if (attemptNumber <= 2 && attempt < 50) {
+                        // 前幾次嘗試優先使用簡單方向
+                        availableDirections = directions.slice(0, 4);
+                    }
+                    
+                    const dir = availableDirections[Math.floor(Math.random() * availableDirections.length)];
+                    const startRow = Math.floor(Math.random() * gridSize);
+                    const startCol = Math.floor(Math.random() * gridSize);
+
+                    if (canPlaceWord(grid, word, startRow, startCol, dir)) {
+                        // 記錄單字位置
+                        const positions = [];
+                        for (let i = 0; i < word.length; i++) {
+                            const row = startRow + i * dir.dr;
+                            const col = startCol + i * dir.dc;
+                            grid[row][col] = word[i];
+                            positions.push({ row, col });
+                        }
+                        
+                        // 儲存單字的完整位置資訊
+                        wordPositions.set(word, {
+                            positions: positions,
+                            startPos: { row: startRow, col: startCol },
+                            endPos: { row: startRow + (word.length - 1) * dir.dr, col: startCol + (word.length - 1) * dir.dc },
+                            direction: dir
+                        });
+                        
+                        successfullyPlacedWords.push(word);
+                        placed = true;
+                        break;
+                    }
+                }
+                
+                if (!placed) {
+                    console.warn(`嘗試 ${attemptNumber}: 無法放置單字 "${word}"`);
+                }
+            }
+            
+            return successfullyPlacedWords;
+        }
+
+        function placeWords(grid, words) {
+            const directions = [
+                { dr: 0, dc: 1 },  // Horizontal (R)
+                { dr: 1, dc: 0 },  // Vertical (D)
+                { dr: 1, dc: 1 },  // Diagonal (DR)
+                { dr: 1, dc: -1 }, // Diagonal (DL)
+                // To make it harder, you can add reverse directions
+                { dr: 0, dc: -1 }, // Horizontal (L) - Harder
+                { dr: -1, dc: 0 }, // Vertical (U) - Harder
+                { dr: -1, dc: -1}, // Diagonal (UL) - Harder
+                { dr: -1, dc: 1 }  // Diagonal (UR) - Harder
+            ];
+            const successfullyPlacedWords = [];
+
+            // 清空單字位置記錄
+            wordPositions.clear();
+
+            // Sort words by length, longest first, to improve placement chances
+            const sortedWords = [...words].sort((a, b) => b.length - a.length);
+
+            for (const word of sortedWords) {
+                let placed = false;
+                for (let attempt = 0; attempt < 100; attempt++) { // Max 100 attempts per word
+                    const dir = directions[Math.floor(Math.random() * directions.length)];
+                    const startRow = Math.floor(Math.random() * gridSize);
+                    const startCol = Math.floor(Math.random() * gridSize);
+
+                    if (canPlaceWord(grid, word, startRow, startCol, dir)) {
+                        // 記錄單字位置
+                        const positions = [];
+                        for (let i = 0; i < word.length; i++) {
+                            const row = startRow + i * dir.dr;
+                            const col = startCol + i * dir.dc;
+                            grid[row][col] = word[i];
+                            positions.push({ row, col });
+                        }
+                        
+                        // 儲存單字的完整位置資訊
+                        wordPositions.set(word, {
+                            positions: positions,
+                            startPos: { row: startRow, col: startCol },
+                            endPos: { row: startRow + (word.length - 1) * dir.dr, col: startCol + (word.length - 1) * dir.dc },
+                            direction: dir
+                        });
+                        
+                        successfullyPlacedWords.push(word);
+                        placed = true;
+                        break;
+                    }
+                }
+                // If you want to inform which words couldn't be placed:
+                // if (!placed) console.warn(`Could not place word: ${word}`);
+            }
+            return successfullyPlacedWords;
+        }
+
+        function canPlaceWord(grid, word, r, c, dir) {
+            for (let i = 0; i < word.length; i++) {
+                const newRow = r + i * dir.dr;
+                const newCol = c + i * dir.dc;
+
+                if (newRow < 0 || newRow >= gridSize || newCol < 0 || newCol >= gridSize) {
+                    return false; // Out of bounds
+                }
+                if (grid[newRow][newCol] !== '' && grid[newRow][newCol] !== word[i]) {
+                    return false; // Cell occupied by a different letter
+                }
+            }
+            return true;
+        }
+
+        function fillEmptyCells(grid) {
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    if (grid[r][c] === '') {
+                        grid[r][c] = getRandomLetter();
+                    }
+                }
+            }
+        }
+
+        // --- Rendering Logic ---
+        function renderGrid(grid) {
+            puzzleGrid.innerHTML = '';
+            puzzleGrid.style.gridTemplateColumns = `repeat(${gridSize}, minmax(0, 1fr))`;
+            puzzleGrid.style.gridTemplateRows = `repeat(${gridSize}, minmax(0, 1fr))`;
+
+
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('grid-cell'); // 響應式文字大小由 CSS 控制
+                    cell.textContent = grid[r][c];
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    puzzleGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function renderWordList(vocabularyData) {
+            wordListEl.innerHTML = '';
+            vocabularyData.forEach(wordData => {
+                const wordItem = document.createElement('div');
+                wordItem.classList.add('word-item');
+                wordItem.id = `word-${wordData.word}`;
+                
+                const wordContent = document.createElement('div');
+                wordContent.innerHTML = `
+                    <div class="word-english">${wordData.word}</div>
+                    <div class="word-chinese">${wordData.meaning}</div>
+                `;
+                
+                wordItem.appendChild(wordContent);
+                wordListEl.appendChild(wordItem);
+            });
+        }
+        
+        function showMessage(msg, isError = false) {
+            let iconHTML = '';
+            if (!isError) {
+                if (msg.includes('恭喜')) {
+                    iconHTML = '<i class="fas fa-trophy mr-2"></i>';
+                } else if (msg.includes('找到了')) {
+                    iconHTML = '<i class="fas fa-check-circle mr-2"></i>';
+                } else {
+                    iconHTML = '<i class="fas fa-info-circle mr-2"></i>';
+                }
+            } else {
+                iconHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>';
+            }
+            
+            messageArea.innerHTML = iconHTML + msg;
+            messageArea.className = `text-center font-semibold mt-4 h-6 ${isError ? 'text-red-600' : 'text-green-600'}`;
+            if (!isError) {
+                setTimeout(() => {
+                    if (messageArea.innerHTML === iconHTML + msg) messageArea.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        // --- Interaction Logic ---
+        function handleCellClick(event) {
+            const cell = event.target.closest('.grid-cell');
+            if (!cell || wordsToFind.length === 0) return;
+
+            // 觸發用戶活動
+            onUserActivity();
+
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+
+            if (!firstClick) {
+                // First click - select starting cell
+                firstClick = { cell, row, col };
+                cell.classList.add('first-click');
+                showPotentialConnections(row, col);
+                showMessage("選擇結束字母", false);
+                
+                // 🎵 播放選擇起始字母音效
+                soundSystem.play('selectStart');
+            } else {
+                // Second click - try to form a word
+                const wordPath = getLinePath(firstClick.row, firstClick.col, row, col);
+                if (wordPath.length > 1) {
+                    checkSelectedWord(wordPath);
+                    // 🎵 播放點擊音效
+                    soundSystem.play('click');
+                } else {
+                    // 🎵 播放錯誤音效（無效選擇）
+                    soundSystem.play('error');
+                }
+                clearClickSelection();
+            }
+        }
+
+        function getLinePath(startRow, startCol, endRow, endCol) {
+            const path = [];
+            const dr = endRow - startRow;
+            const dc = endCol - startCol;
+            
+            // Check if it's a valid straight line (horizontal, vertical, or diagonal)
+            if (dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc)) {
+                const steps = Math.max(Math.abs(dr), Math.abs(dc));
+                const stepR = steps === 0 ? 0 : dr / steps;
+                const stepC = steps === 0 ? 0 : dc / steps;
+                
+                for (let i = 0; i <= steps; i++) {
+                    path.push({
+                        row: startRow + Math.round(i * stepR),
+                        col: startCol + Math.round(i * stepC)
+                    });
+                }
+            }
+            return path;
+        }
+
+        function getCellAt(row, col) {
+            return puzzleGrid.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        }
+
+        function showPotentialConnections(startRow, startCol) {
+            // Highlight potential ending positions for all words
+            const directions = [
+                { dr: 0, dc: 1 }, { dr: 0, dc: -1 },   // Horizontal
+                { dr: 1, dc: 0 }, { dr: -1, dc: 0 },   // Vertical  
+                { dr: 1, dc: 1 }, { dr: -1, dc: -1 },  // Diagonal
+                { dr: 1, dc: -1 }, { dr: -1, dc: 1 }   // Diagonal
+            ];
+
+            wordsToFind.forEach(word => {
+                if (foundWords.has(word)) return;
+                
+                directions.forEach(dir => {
+                    const endRow = startRow + (word.length - 1) * dir.dr;
+                    const endCol = startCol + (word.length - 1) * dir.dc;
+                    
+                    if (endRow >= 0 && endRow < gridSize && endCol >= 0 && endCol < gridSize) {
+                        const endCell = getCellAt(endRow, endCol);
+                        if (endCell) {
+                            endCell.classList.add('potential');
+                        }
+                    }
+                });
+            });
+        }
+
+        function clearClickSelection() {
+            if (firstClick) {
+                firstClick.cell.classList.remove('first-click');
+                firstClick = null;
+            }
+            // Clear potential highlights
+            document.querySelectorAll('.grid-cell').forEach(cell => {
+                cell.classList.remove('potential', 'selected');
+            });
+        }
+
+        function checkSelectedWord(wordPath) {
+            if (wordPath.length < 2) return; // Need at least 2 letters
+
+            // Reconstruct word from path
+            let selectedWord = wordPath.map(pos => currentGrid[pos.row][pos.col]).join('');
+            let reversedSelectedWord = selectedWord.split('').reverse().join('');
+
+            wordsToFind.forEach(wordToFind => {
+                if (!foundWords.has(wordToFind) && (selectedWord === wordToFind || reversedSelectedWord === wordToFind)) {
+                    foundWords.add(wordToFind);
+                    document.getElementById(`word-${wordToFind}`).classList.add('found');
+                    
+                    // Mark cells as part of a found word
+                    wordPath.forEach(pos => {
+                        const cell = getCellAt(pos.row, pos.col);
+                        if (cell) cell.classList.add('found');
+                    });
+                    
+                    // 🎵 播放找到單字的音效
+                    soundSystem.play('wordFound');
+                    
+                    if (foundWords.size === wordsToFind.length) {
+                        // 🏆 播放遊戲完成音效
+                        setTimeout(() => soundSystem.play('gameComplete'), 300);
+                        showMessage("恭喜！您找到了所有單字！", false);
+                    } else {
+                        showMessage(`找到了: ${wordToFind}!`, false);
+                    }
+                }
+            });
+        }
+
+        // 洗牌陣列（Fisher-Yates 演算法）
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- 提示系統 ---
+        function resetInactivityTimer() {
+            lastActivityTime = Date.now();
+            clearTimeout(inactivityTimer);
+            
+            inactivityTimer = setTimeout(() => {
+                showHint();
+            }, hintTimeout);
+        }
+
+        function showHint() {
+            // 找到還沒找到的單字
+            const unfoundWords = wordsToFind.filter(word => !foundWords.has(word));
+            
+            if (unfoundWords.length === 0) return; // 所有單字都找到了
+            
+            // 隨機選擇一個未找到的單字
+            const randomWord = unfoundWords[Math.floor(Math.random() * unfoundWords.length)];
+            const wordInfo = wordPositions.get(randomWord);
+            
+            if (!wordInfo) return;
+            
+            // 清除之前的提示
+            clearHint();
+            
+            // 🎵 播放提示音效
+            soundSystem.play('hint');
+            
+            // 高亮起始位置
+            const startCell = getCellAt(wordInfo.startPos.row, wordInfo.startPos.col);
+            if (startCell) {
+                startCell.classList.add('hint');
+                currentHint = { cell: startCell, word: randomWord };
+                
+                // 顯示提示訊息
+                showHintMessage(`提示：試試從這裡開始尋找 "${randomWord}"!`);
+                
+                // 在單字列表中高亮對應的單字
+                const wordItem = document.getElementById(`word-${randomWord}`);
+                if (wordItem) {
+                    wordItem.style.backgroundColor = '#e0e7ff';
+                    wordItem.style.borderColor = '#8b5cf6';
+                    setTimeout(() => {
+                        if (wordItem && !foundWords.has(randomWord)) {
+                            wordItem.style.backgroundColor = '';
+                            wordItem.style.borderColor = '';
+                        }
+                    }, 5000);
+                }
+            }
+        }
+
+        function clearHint() {
+            if (currentHint) {
+                currentHint.cell.classList.remove('hint');
+                currentHint = null;
+            }
+        }
+
+        function showHintMessage(message) {
+            const hintDiv = document.createElement('div');
+            hintDiv.className = 'hint-message';
+            hintDiv.innerHTML = `<i class="fas fa-lightbulb mr-2"></i>${message.replace('💡 ', '')}`;
+            document.body.appendChild(hintDiv);
+            
+            setTimeout(() => {
+                if (hintDiv.parentNode) {
+                    hintDiv.parentNode.removeChild(hintDiv);
+                }
+            }, 3000);
+        }
+
+        function onUserActivity() {
+            clearHint();
+            resetInactivityTimer();
+        }
+
+        // --- Event Listeners ---
+        // Click interaction for word selection
+        puzzleGrid.addEventListener('click', handleCellClick);
+
+        // 監聽各種用戶活動以重置提示計時器
+        document.addEventListener('mousemove', resetInactivityTimer);
+        document.addEventListener('keydown', resetInactivityTimer);
+        document.addEventListener('scroll', resetInactivityTimer);
+        puzzleGrid.addEventListener('mouseover', resetInactivityTimer);
+
+        // --- Initialize Application ---
+        async function initializeApp() {
+            try {
+                // 顯示載入指示器
+                loadingIndicator.style.display = 'block';
+                messageArea.textContent = '';
+
+                // 從 Google Sheet 載入資料
+                const vocabularyData = await loadSheetData();
+                
+                // 隱藏載入指示器
+                loadingIndicator.style.display = 'none';
+                
+                // 顯示難度選擇或直接開始遊戲
+                showDifficultySelection(vocabularyData);
+                
+                // 啟動提示系統
+                resetInactivityTimer();
+                
+            } catch (error) {
+                console.error("初始化失敗:", error);
+                loadingIndicator.style.display = 'none';
+                showMessage(error.message, true);
+                
+                // 如果載入失敗，顯示錯誤訊息和說明
+                messageArea.innerHTML = `
+                    <div class="text-red-600 mb-2 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>${error.message}
+                    </div>
+                    <div class="text-slate-500 text-sm flex items-center justify-center">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        請確認URL包含正確的label參數，例如：<br>
+                        <code class="bg-slate-100 px-1 rounded">?label=toeic</code>
+                    </div>
+                `;
+            }
+        }
+
+        // 處理窗口大小變化
+        function handleWindowResize() {
+            // 如果遊戲正在進行中，檢查是否需要調整
+            if (wordsToFind.length > 0) {
+                const maxWords = getRecommendedMaxWords();
+                const currentWords = wordsToFind.length;
+                
+                // 如果當前單字數量超過推薦數量太多，提示用戶
+                if (currentWords > maxWords * 1.5) {
+                    const shouldRestart = confirm(
+                        `偵測到螢幕尺寸變化。當前遊戲有 ${currentWords} 個單字，` +
+                        `建議在此螢幕尺寸下使用 ${maxWords} 個單字以獲得更好體驗。\n\n` +
+                        `是否要重新開始並調整單字數量？`
+                    );
+                    
+                    if (shouldRestart) {
+                        location.reload(); // 重新載入頁面
+                    }
+                }
+            }
+        }
+
+        // 監聽窗口大小變化
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(handleWindowResize, 500); // 防抖處理
+        });
+
+        // --- Toggle 功能 ---
+        function initializeHelpToggle() {
+            const helpToggleBtn = document.getElementById('helpToggleBtn');
+            const helpContent = document.getElementById('helpContent');
+            
+            helpToggleBtn.addEventListener('click', function() {
+                // 🎵 播放點擊音效
+                soundSystem.play('click');
+                
+                const isExpanded = helpContent.classList.contains('expanded');
+                
+                if (isExpanded) {
+                    // 收合說明
+                    helpContent.classList.remove('expanded');
+                    helpToggleBtn.classList.remove('expanded');
+                } else {
+                    // 展開說明
+                    helpContent.classList.add('expanded');
+                    helpToggleBtn.classList.add('expanded');
+                }
+            });
+        }
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        document.addEventListener('DOMContentLoaded', initializeHelpToggle);
+    </script>
+</body>
+</html>
