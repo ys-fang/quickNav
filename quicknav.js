@@ -9,10 +9,10 @@ const QuickNav = (function() {
   // 預設配置
   const defaultConfig = {
     targetPages: [
-      { id: 'vocabnote', name: '字彙筆記', icon: 'fa-book-open', path: '../vocabnote/' },
-      { id: 'vocabprint', name: '字彙列印', icon: 'fa-print', path: './vocabprint/' },
-      { id: 'vocabloop', name: '字彙迴憶', icon: 'fa-infinity', path: '../vocabloop/' },
-      { id: 'vocabwall', name: '字彙謎題', icon: 'fa-th', path: '../vocabwall/' }
+      { id: 'vocabnote', name: '單字記憶卡', icon: 'fa-book-open', path: '../vocabnote/' },
+      { id: 'vocabprint', name: '單字列印', icon: 'fa-print', path: './vocabprint/' },
+      { id: 'vocabloop', name: '單字挑戰', icon: 'fa-infinity', path: '../vocabloop/' },
+      { id: 'vocabwall', name: '單字謎題', icon: 'fa-th', path: '../vocabwall/' }
     ],
     title: '跳轉捷徑',
     triggerIcon: 'fa-compass',
